@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
-public class PlayerPromixityChecker : NetworkProximityChecker {
+public class PlayerProximityChecker : NetworkProximityChecker {
     public override bool OnCheckObserver(NetworkConnection conn) {
         Player p;
         if (!GameManager.Instance.GameStarted || (p = conn.identity.GetComponent<Player>()).Lives == 0 || p.SeesEveryone)
             return true;
         if (forceHidden)
             return false;
-        // Debug.Log("ASK " + GetComponent<Player>().Name + " => " + p.Name);
 
         Vector3 position = conn.identity.transform.position + new Vector3(0f, 1f, 0f);
         Vector3 connPosition = transform.position + new Vector3(0f, 1f, 0f);
@@ -18,8 +17,6 @@ public class PlayerPromixityChecker : NetworkProximityChecker {
         Transform nearest = PhysicsUtils.GetNearestHit(hits, conn.identity.transform, PhysicsUtils.HitType.OnlyColliders);
 
         return nearest != null && nearest.transform == transform;
-
-        // return base.OnCheckObserver(conn);
     }
 
     public override void OnRebuildObservers(HashSet<NetworkConnection> observers, bool initialize) {

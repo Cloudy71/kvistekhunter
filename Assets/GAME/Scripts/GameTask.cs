@@ -25,13 +25,14 @@ public abstract class GameTask : NetworkBehaviour {
     [HideInInspector]
     public float LastHunterOpened;
 
-    private Light _light;
+    protected Light light;
+    
     private bool  _firstCome;
     private bool  _oldVictimActive;
     private bool  _oldHunterActive;
 
     protected virtual void Awake() {
-        _light = transform.Find("TaskLight")?.GetComponent<Light>();
+        light = transform.Find("TaskLight")?.GetComponent<Light>();
         _firstCome = true;
     }
 
@@ -57,49 +58,30 @@ public abstract class GameTask : NetworkBehaviour {
         }
     }
 
-    private void OnVictimActiveChange() {
-        // if (isServer) {
-        //     if (ActivatorObject != null && ActivateIfVictimActive)
-        //         ActivatorObject.GetComponent<GameObstacle>().Active = true;
-        // }
+    protected virtual void OnVictimActiveChange() {
         if (isServer) {
             foreach (GameObject task in ActiveSync) {
                 task.GetComponent<GameTask>().VictimActive = VictimActive;
             }
         }
 
-        // Debug.Log("VICTIM CHANGE0 " + name);
-
-        if (Player.GetLocal == null)
+        if (Player.GetLocal == null || Player.GetLocal.IsHunter)
             return;
 
-        if (Player.GetLocal.IsHunter)
-            return;
-        if (_light != null) _light.enabled = VictimActive;
-        // Debug.Log("VICTIM CHANGE1 " + name);
+        if (light != null) light.enabled = VictimActive;
     }
 
-    private void OnHunterActiveChange() {
-        // if (isServer) {
-        //     if (ActivatorObject != null && ActivateIfHunterActive)
-        //         ActivatorObject.GetComponent<GameObstacle>().Active = true;
-        // }
-
+    protected virtual void OnHunterActiveChange() {
         if (isServer) {
             foreach (GameObject task in ActiveSync) {
                 task.GetComponent<GameTask>().HunterActive = HunterActive;
             }
         }
 
-        // Debug.Log("HUNTER CHANGE0 " + name);
-
-        if (Player.GetLocal == null)
+        if (Player.GetLocal == null || !Player.GetLocal.IsHunter)
             return;
 
-        if (!Player.GetLocal.IsHunter)
-            return;
-        if (_light != null) _light.enabled = HunterActive;
-        // Debug.Log("HUNTER CHANGE0 " + name);
+        if (light != null) light.enabled = HunterActive;
     }
 
     public void ForceCloseTask(Player player) {

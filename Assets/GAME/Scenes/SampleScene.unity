@@ -6233,14 +6233,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1438124513}
     m_Modifications:
-    - target: {fileID: 2485912808845451496, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
-      propertyPath: m_Layer
-      value: 31
-      objectReference: {fileID: 0}
-    - target: {fileID: 2485912809172352959, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
-      propertyPath: m_Layer
-      value: 31
-      objectReference: {fileID: 0}
     - target: {fileID: 2485912809304013669, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
       propertyPath: sceneId
       value: 575322030
@@ -6252,10 +6244,6 @@ PrefabInstance:
     - target: {fileID: 2485912809304013672, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
       propertyPath: m_Name
       value: TaskDoors
-      objectReference: {fileID: 0}
-    - target: {fileID: 2485912809304013672, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
-      propertyPath: m_Layer
-      value: 31
       objectReference: {fileID: 0}
     - target: {fileID: 2485912809304013675, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6317,10 +6305,6 @@ PrefabInstance:
       propertyPath: Controlling.Array.data[3]
       value: 
       objectReference: {fileID: 576806987}
-    - target: {fileID: 2485912809473265867, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
-      propertyPath: m_Layer
-      value: 31
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3c3a0f92578ead4489ae7d6159cdc0ee, type: 3}
 --- !u!1001 &7614718514273909523
@@ -6330,21 +6314,9 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1438124513}
     m_Modifications:
-    - target: {fileID: 1586298377502365122, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}
-      propertyPath: m_Layer
-      value: 31
-      objectReference: {fileID: 0}
-    - target: {fileID: 1586298377736190646, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}
-      propertyPath: m_Layer
-      value: 31
-      objectReference: {fileID: 0}
     - target: {fileID: 1586298377902592277, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}
       propertyPath: m_Name
       value: TaskLights
-      objectReference: {fileID: 0}
-    - target: {fileID: 1586298377902592277, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}
-      propertyPath: m_Layer
-      value: 31
       objectReference: {fileID: 0}
     - target: {fileID: 1586298377902592278, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6397,10 +6369,6 @@ PrefabInstance:
     - target: {fileID: 1586298377902592280, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}
       propertyPath: m_AssetId
       value: 441c02d4b61ef6648a8ddb0754f4f37a
-      objectReference: {fileID: 0}
-    - target: {fileID: 1586298378366651029, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}
-      propertyPath: m_Layer
-      value: 31
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 441c02d4b61ef6648a8ddb0754f4f37a, type: 3}

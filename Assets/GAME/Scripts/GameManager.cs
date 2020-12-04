@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
@@ -26,6 +27,9 @@ public class GameManager : NetworkManager {
     public float VictimTaskDistance     = 1f;
     public float HunterKillDistance     = 2.5f;
     public float HunterVisionOnCooldown = 3f;
+    public int   VictimCommonTasks      = 1;
+    public int   VictimLongTasks        = 1;
+    public int   VictimShortTasks       = 1;
 
     private Transform _panelGameInfo;
     private Button    _startButton;
@@ -294,9 +298,63 @@ public class GameManager : NetworkManager {
             }
 
             p.RefreshStats();
-            p.transform.position = GetStartPosition().position;
         }
 
         ServerChangeScene("SampleScene");
+    }
+
+    public override void OnServerSceneChanged(string sceneName) {
+        base.OnServerSceneChanged(sceneName);
+        if (!GameStarted)
+            return;
+
+        GameLocalTask[] tasks = FindObjectsOfType<GameLocalTask>();
+        Dictionary<GameLocalTask.LocalTaskType, GameLocalTask[]> typedTasks = new Dictionary<GameLocalTask.LocalTaskType, GameLocalTask[]>();
+        typedTasks.Add(GameLocalTask.LocalTaskType.Common, tasks.Where(task => task.Type == GameLocalTask.LocalTaskType.Common).ToArray());
+        typedTasks.Add(GameLocalTask.LocalTaskType.Long, tasks.Where(task => task.Type == GameLocalTask.LocalTaskType.Long).ToArray());
+        typedTasks.Add(GameLocalTask.LocalTaskType.Short, tasks.Where(task => task.Type == GameLocalTask.LocalTaskType.Short).ToArray());
+
+        List<GameLocalTask> selectedCommonTasks = new List<GameLocalTask>();
+        List<GameLocalTask> availableCommonTasks = new List<GameLocalTask>(typedTasks[GameLocalTask.LocalTaskType.Common]);
+        int total = VictimCommonTasks <= availableCommonTasks.Count ? VictimCommonTasks : availableCommonTasks.Count;
+        for (int i = 0; i < total; ++i) {
+            int taskIndex = Random.Range(0, availableCommonTasks.Count);
+            selectedCommonTasks.Add(availableCommonTasks[taskIndex]);
+            availableCommonTasks.RemoveAt(taskIndex);
+        }
+
+        foreach (KeyValuePair<int, NetworkConnectionToClient> player in NetworkServer.connections) {
+            Player p = player.Value.identity.GetComponent<Player>();
+            Transform startPosition = GetStartPosition();
+
+            if (!p.IsHunter) {
+                foreach (GameLocalTask.LocalTaskType taskType in typedTasks.Keys) {
+                    if (taskType == GameLocalTask.LocalTaskType.Common) {
+                        foreach (GameLocalTask selectedCommonTask in selectedCommonTasks) {
+                            p.TaskList.Add(selectedCommonTask);
+                        }
+
+                        continue;
+                    }
+
+                    List<GameLocalTask> availableTasks = new List<GameLocalTask>(typedTasks[taskType]);
+                    int req = taskType == GameLocalTask.LocalTaskType.Common ? VictimCommonTasks : taskType == GameLocalTask.LocalTaskType.Long ? VictimLongTasks : VictimShortTasks;
+                    total = availableTasks.Count;
+                    Debug.Log(taskType + " => " + total);
+                    for (int i = 0; i < (req <= total ? req : total); ++i) {
+                        int taskIndex = Random.Range(0, availableTasks.Count);
+                        p.TaskList.Add(availableTasks[taskIndex]);
+                        availableTasks.RemoveAt(taskIndex);
+                    }
+                }
+
+                p.SynchronizeTaskList();
+            }
+
+            if (startPosition == null)
+                continue;
+            p.transform.position = startPosition.position;
+            p.RpcSetPosition(p.transform.position);
+        }
     }
 }

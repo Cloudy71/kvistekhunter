@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1586298377502365123}
   - component: {fileID: 1586298377502365124}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: TaskLight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 1586298377736190647}
   - component: {fileID: 1586298377736190650}
   - component: {fileID: 1586298377736190649}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -185,7 +185,7 @@ GameObject:
   - component: {fileID: 1586298377902592280}
   - component: {fileID: 549429732793078092}
   - component: {fileID: 1586298377902592276}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: TaskLights
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -253,8 +253,9 @@ MonoBehaviour:
   syncInterval: 0.1
   VictimActive: 1
   HunterActive: 0
-  VictimCooldown: 10
+  VictimCooldown: 40
   HunterCooldown: 0
+  SetCooldownOnStep: 0
   ActiveSync: []
   ActivatorObject: {fileID: 0}
   Closeable: 1
@@ -271,7 +272,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1586298378366651030}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
