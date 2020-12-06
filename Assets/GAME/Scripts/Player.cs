@@ -522,6 +522,15 @@ public class Player : NetworkBehaviour {
                 }
             }
 
+            if (GameManager.Instance.GameStarted) {
+                GUI.skin.label.fontSize = 36;
+                GUI.contentColor = Color.white;
+                string time = Utils.TimeToString(GameManager.Instance.TimeLimit - ((float) NetworkTime.time - GameManager.Instance.StartTime));
+                Vector2 size = GUI.skin.label.CalcSize(new GUIContent(time));
+                GUI.Label(new Rect(Screen.width / 2f - size.x / 2f, Screen.height - size.y, size.x, size.y), time);
+                GUI.skin.label.fontSize = GUI.skin.font.fontSize;
+            }
+
             if (CurrentTask != null)
                 CurrentTask.OnTaskGUI();
         }

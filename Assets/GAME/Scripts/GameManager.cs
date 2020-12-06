@@ -30,6 +30,9 @@ public class GameManager : NetworkManager {
     public int   VictimCommonTasks      = 1;
     public int   VictimLongTasks        = 1;
     public int   VictimShortTasks       = 1;
+    public float TimeLimit              = 600f;
+
+    public float StartTime;
 
     private Transform _panelGameInfo;
     private Button    _startButton;
@@ -67,10 +70,18 @@ public class GameManager : NetworkManager {
     private void Update() {
         if (_camera == null)
             _camera = Camera.main;
+
+        if (NetworkServer.active && GameStarted) {
+            TimeController();
+        }
     }
 
     public static Camera GetCamera() {
         return Instance._camera;
+    }
+
+    private void TimeController() {
+        
     }
 
     public override void OnStartServer() {
@@ -239,8 +250,10 @@ public class GameManager : NetworkManager {
     private void MessageGameStatusClientHandler(MessageGameStatus msg) {
         GameStarted = msg.GameStarted;
         Admin = msg.Admin.GetComponent<Player>();
-        if (!GameStarted)
+        if (!GameStarted) {
+            StartTime = (float) NetworkTime.time;
             RefreshGameInfo();
+        }
         else {
             GameScreenDrawer.Instance.Intro = true;
             GameScreenDrawer.Instance.Outro = false;
@@ -267,6 +280,7 @@ public class GameManager : NetworkManager {
         GameStarted = true;
         msg.Admin = Admin.gameObject;
         NetworkServer.SendToAll(msg);
+        StartTime = (float) NetworkTime.time;
         List<int> connectionIds = new List<int>();
         foreach (int connectionsKey in NetworkServer.connections.Keys) {
             connectionIds.Add(connectionsKey);

@@ -7,6 +7,15 @@ public struct MessageGameInfo : NetworkMessage {
     public float HunterVision;
     public float HunterKillCooldown;
     public float HunterSpeed;
+    public int   Hunters;
+    public bool  DisplayHunters;
+    public float VictimTaskDistance;
+    public float HunterKillDistance;
+    public float HunterVisionOnCooldown;
+    public int   VictimCommonTasks;
+    public int   VictimLongTasks;
+    public int   VictimShortTasks;
+    public float TimeLimit;
 }
 
 public static class MessageGameInfoFunctions {
@@ -17,6 +26,15 @@ public static class MessageGameInfoFunctions {
         writer.WriteSingle(value.HunterVision);
         writer.WriteSingle(value.HunterKillCooldown);
         writer.WriteSingle(value.HunterSpeed);
+        writer.WriteInt32(value.Hunters);
+        writer.WriteBoolean(value.DisplayHunters);
+        writer.WriteSingle(value.VictimTaskDistance);
+        writer.WriteSingle(value.HunterKillDistance);
+        writer.WriteSingle(value.HunterVisionOnCooldown);
+        writer.WriteInt32(value.VictimCommonTasks);
+        writer.WriteInt32(value.VictimLongTasks);
+        writer.WriteInt32(value.VictimShortTasks);
+        writer.WriteSingle(value.TimeLimit);
     }
 
     public static MessageGameInfo Deserialize(this NetworkReader reader) {
@@ -27,6 +45,15 @@ public static class MessageGameInfoFunctions {
         value.HunterVision = reader.ReadSingle();
         value.HunterKillCooldown = reader.ReadSingle();
         value.HunterSpeed = reader.ReadSingle();
+        value.Hunters = reader.ReadInt32();
+        value.DisplayHunters = reader.ReadBoolean();
+        value.VictimTaskDistance = reader.ReadSingle();
+        value.HunterKillDistance = reader.ReadSingle();
+        value.HunterVisionOnCooldown = reader.ReadSingle();
+        value.VictimCommonTasks = reader.ReadInt32();
+        value.VictimLongTasks = reader.ReadInt32();
+        value.VictimShortTasks = reader.ReadInt32();
+        value.TimeLimit = reader.ReadSingle();
         return value;
     }
 }

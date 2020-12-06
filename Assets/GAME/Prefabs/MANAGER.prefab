@@ -77,6 +77,11 @@ MonoBehaviour:
   VictimTaskDistance: 1
   HunterKillDistance: 2.5
   HunterVisionOnCooldown: 2
+  VictimCommonTasks: 1
+  VictimLongTasks: 1
+  VictimShortTasks: 1
+  TimeLimit: 600
+  StartTime: 0
 --- !u!114 &108540408289238608
 MonoBehaviour:
   m_ObjectHideFlags: 0
