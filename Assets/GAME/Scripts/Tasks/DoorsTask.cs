@@ -37,7 +37,8 @@ public class DoorsTask : GameTask {
         return true;
     }
 
-    public override void OnTaskFinish(Player player, params object[] data) {
+    public override bool OnTaskFinish(Player player, params object[] data) {
+        return true;
     }
 
     public override void OnTaskClose(Player player) {
@@ -101,7 +102,7 @@ public class DoorsTask : GameTask {
                     _doors |= (byte) (0b1 << i);
                 }
 
-                Player.Local.CmdTaskStep(new TaskPayload(_doors));
+                SendTaskStep(_doors);
             }
         }
 

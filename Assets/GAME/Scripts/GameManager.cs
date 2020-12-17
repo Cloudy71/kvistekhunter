@@ -31,8 +31,13 @@ public class GameManager : NetworkManager {
     public int   VictimLongTasks        = 1;
     public int   VictimShortTasks       = 1;
     public float TimeLimit              = 600f;
+    public float HunterHealth           = 100f;
 
-    public float StartTime;
+    [HideInInspector]
+    public float StatusStartTime;
+
+    [HideInInspector]
+    public float StatusHunterHealth;
 
     private Transform _panelGameInfo;
     private Button    _startButton;
@@ -81,7 +86,6 @@ public class GameManager : NetworkManager {
     }
 
     private void TimeController() {
-        
     }
 
     public override void OnStartServer() {
@@ -163,7 +167,17 @@ public class GameManager : NetworkManager {
                                                        VictimSpeed = VictimSpeed,
                                                        HunterVision = HunterVision,
                                                        HunterKillCooldown = HunterKillCooldown,
-                                                       HunterSpeed = HunterSpeed
+                                                       HunterSpeed = HunterSpeed,
+                                                       Hunters = Hunters,
+                                                       DisplayHunters = DisplayHunters,
+                                                       VictimTaskDistance = VictimTaskDistance,
+                                                       HunterKillDistance = HunterKillDistance,
+                                                       HunterVisionOnCooldown = HunterVisionOnCooldown,
+                                                       VictimCommonTasks = VictimCommonTasks,
+                                                       VictimLongTasks = VictimLongTasks,
+                                                       VictimShortTasks = VictimShortTasks,
+                                                       TimeLimit = TimeLimit,
+                                                       HunterHealth = HunterHealth
                                                    };
         if (NetworkServer.active) {
             if (conn != null)
@@ -240,6 +254,16 @@ public class GameManager : NetworkManager {
         HunterVision = msg.HunterVision;
         HunterKillCooldown = msg.HunterKillCooldown;
         HunterSpeed = msg.HunterSpeed;
+        Hunters = msg.Hunters;
+        DisplayHunters = msg.DisplayHunters;
+        VictimTaskDistance = msg.VictimTaskDistance;
+        HunterKillDistance = msg.HunterKillDistance;
+        HunterVisionOnCooldown = msg.HunterVisionOnCooldown;
+        VictimCommonTasks = msg.VictimCommonTasks;
+        VictimLongTasks = msg.VictimLongTasks;
+        VictimShortTasks = msg.VictimShortTasks;
+        TimeLimit = msg.TimeLimit;
+        HunterHealth = msg.HunterHealth;
     }
 
     private void MessageGameInfoClientHandler(MessageGameInfo msg) {
@@ -251,7 +275,7 @@ public class GameManager : NetworkManager {
         GameStarted = msg.GameStarted;
         Admin = msg.Admin.GetComponent<Player>();
         if (!GameStarted) {
-            StartTime = (float) NetworkTime.time;
+            StatusStartTime = (float) NetworkTime.time;
             RefreshGameInfo();
         }
         else {
@@ -280,12 +304,13 @@ public class GameManager : NetworkManager {
         GameStarted = true;
         msg.Admin = Admin.gameObject;
         NetworkServer.SendToAll(msg);
-        StartTime = (float) NetworkTime.time;
+        StatusStartTime = (float) NetworkTime.time;
         List<int> connectionIds = new List<int>();
         foreach (int connectionsKey in NetworkServer.connections.Keys) {
             connectionIds.Add(connectionsKey);
         }
 
+        Debug.Log("HUNTERS = " + Hunters);
         int[] hunters = new int[Hunters];
         for (int i = 0; i < Hunters; ++i) {
             hunters[i] = -1;
@@ -305,7 +330,7 @@ public class GameManager : NetworkManager {
             p.IsHunter = false;
             foreach (int hunter in hunters) {
                 if (player.Key == connectionIds[hunter]) {
-                    p.IsHunter = true;
+                    // p.IsHunter = true;
                     if (Player.HunterPlayer == null)
                         Player.HunterPlayer = p;
                 }
@@ -313,6 +338,8 @@ public class GameManager : NetworkManager {
 
             p.RefreshStats();
         }
+
+        StatusHunterHealth = HunterHealth;
 
         ServerChangeScene("SampleScene");
     }
@@ -344,6 +371,7 @@ public class GameManager : NetworkManager {
             if (!p.IsHunter) {
                 foreach (GameLocalTask.LocalTaskType taskType in typedTasks.Keys) {
                     if (taskType == GameLocalTask.LocalTaskType.Common) {
+                        Debug.Log("COMMON => " + selectedCommonTasks.Count);
                         foreach (GameLocalTask selectedCommonTask in selectedCommonTasks) {
                             p.TaskList.Add(selectedCommonTask);
                         }

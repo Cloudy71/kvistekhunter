@@ -8,7 +8,8 @@ public abstract class GameLocalTask : GameTask {
         Short
     }
 
-    public bool SelfActive;
+    public bool  SelfActive;
+    public float Damage;
 
     public LocalTaskType Type;
 
@@ -21,18 +22,6 @@ public abstract class GameLocalTask : GameTask {
             foreach (KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections) {
                 PlayerFinished.Add(connection.Value.identity.GetComponent<Player>(), false);
             }
-
-            // switch (Type) {
-            //     case LocalTaskType.Common:
-            //         foreach (Player player in PlayerActive.Keys) {
-            //             PlayerActive[player] = true;
-            //         }
-            //
-            //         break;
-            //     case LocalTaskType.Long: case LocalTaskType.Short:
-            //         
-            //         break;
-            // }
         }
     }
 
@@ -40,8 +29,8 @@ public abstract class GameLocalTask : GameTask {
         base.Start();
         VictimActive = true;
         HunterActive = false;
-        OnVictimActiveChange();
-        OnHunterActiveChange();
+        // OnVictimActiveChange();
+        // OnHunterActiveChange();
     }
 
     public override bool OnTaskOpen(Player player) {
@@ -54,9 +43,15 @@ public abstract class GameLocalTask : GameTask {
     public override void OnTaskClose(Player player) {
     }
 
-    public override void OnTaskFinish(Player player, params object[] data) {
+    public override bool OnTaskFinish(Player player, params object[] data) {
         player.TaskList.Remove(this);
         player.SynchronizeTaskList();
+        return true;
+    }
+
+    public override void OnTaskFinishClient() {
+        base.OnTaskFinishClient();
+        OnVictimActiveChange();
     }
 
     protected override void OnVictimActiveChange() {
@@ -66,5 +61,9 @@ public abstract class GameLocalTask : GameTask {
 
         SelfActive = Player.GetLocal.TaskList.Contains(this);
         light.enabled = SelfActive;
+    }
+
+    public void ForceNotify() {
+        OnVictimActiveChange();
     }
 }

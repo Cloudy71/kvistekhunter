@@ -35,8 +35,9 @@ public class LineDoorTask : GameTask {
         return true;
     }
 
-    public override void OnTaskFinish(Player player, params object[] data) {
+    public override bool OnTaskFinish(Player player, params object[] data) {
         ActivatorObject.Active = !player.IsHunter;
+        return true;
     }
 
     public override void OnTaskClose(Player player) {
@@ -70,8 +71,7 @@ public class LineDoorTask : GameTask {
         }
 
         if (Buttons == _buttons && Buttons != 0) {
-            Player.GetLocal.CmdTaskFinish(null);
-            OnTaskFinishClient();
+            SendTaskFinish();
         }
 
         GUI.skin.button.normal.background = GameAssets.DefaultUnityNormalBackground;

@@ -16,6 +16,7 @@ public struct MessageGameInfo : NetworkMessage {
     public int   VictimLongTasks;
     public int   VictimShortTasks;
     public float TimeLimit;
+    public float HunterHealth;
 }
 
 public static class MessageGameInfoFunctions {
@@ -35,6 +36,7 @@ public static class MessageGameInfoFunctions {
         writer.WriteInt32(value.VictimLongTasks);
         writer.WriteInt32(value.VictimShortTasks);
         writer.WriteSingle(value.TimeLimit);
+        writer.WriteSingle(value.HunterHealth);
     }
 
     public static MessageGameInfo Deserialize(this NetworkReader reader) {
@@ -54,6 +56,7 @@ public static class MessageGameInfoFunctions {
         value.VictimLongTasks = reader.ReadInt32();
         value.VictimShortTasks = reader.ReadInt32();
         value.TimeLimit = reader.ReadSingle();
+        value.HunterHealth = reader.ReadSingle();
         return value;
     }
 }

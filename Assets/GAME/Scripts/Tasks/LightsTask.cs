@@ -26,7 +26,7 @@ public class LightsTask : GameTask {
         return true;
     }
 
-    public override void OnTaskFinish(Player player, params object[] data) {
+    public override bool OnTaskFinish(Player player, params object[] data) {
         GameStatus.Instance.LightsOff = !player.IsHunter;
         Buttons = player.IsHunter;
         if (player.IsHunter) {
@@ -37,6 +37,8 @@ public class LightsTask : GameTask {
             VictimActive = false;
             HunterActive = true;
         }
+
+        return true;
     }
 
     public override void OnTaskClose(Player player) {
@@ -67,6 +69,7 @@ public class LightsTask : GameTask {
 
         if (Player.GetLocal.IsHunter && _buttons == 0b11111111 || !Player.GetLocal.IsHunter && _buttons == 0) {
             Player.GetLocal.CmdTaskFinish(null);
+            SendTaskFinish();
             OnTaskFinishClient();
         }
 

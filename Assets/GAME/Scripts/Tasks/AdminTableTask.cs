@@ -6,7 +6,8 @@ public class AdminTableTask : GameTask {
         return true;
     }
 
-    public override void OnTaskFinish(Player player, params object[] data) {
+    public override bool OnTaskFinish(Player player, params object[] data) {
+        return true;
     }
 
     public override void OnTaskClose(Player player) {

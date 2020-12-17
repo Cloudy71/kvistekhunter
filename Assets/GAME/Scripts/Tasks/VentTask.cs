@@ -43,7 +43,7 @@ public class VentTask : GameTask {
         return true;
     }
 
-    public override void OnTaskFinish(Player player, params object[] data) {
+    public override bool OnTaskFinish(Player player, params object[] data) {
         GameObject path = (GameObject) data[0];
         Vector3 position = path.transform.position;
         player.transform.position = position;
@@ -51,6 +51,8 @@ public class VentTask : GameTask {
         SetUsed(player, true);
         path.GetComponent<VentTask>().SetUsed(player, true);
         player.RpcPlayAnimation("UnVent");
+
+        return true;
     }
 
     private void OnTrappedChanged(bool oldValue, bool newValue) {
@@ -72,8 +74,7 @@ public class VentTask : GameTask {
             Vector3 realArrowPos = Vector3.MoveTowards(transform.position, pathPos, 2f);
             Vector3 screenPos = GameManager.GetCamera().WorldToScreenPoint(realArrowPos);
             if (GUI.Button(new Rect(screenPos.x - 16f, Screen.height - screenPos.y - 16f, 32f, 32f), "")) {
-                Player.GetLocal.CmdTaskFinish(new TaskPayload(pathObject));
-                OnTaskFinishClient();
+                SendTaskFinish(pathObject);
             }
         }
     }

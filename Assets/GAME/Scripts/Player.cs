@@ -111,10 +111,10 @@ public class Player : NetworkBehaviour {
     void Update() {
         if (isServer) {
             Vision = IsHunter
-                ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
-                    ? GameManager.Instance.HunterVisionOnCooldown
-                    : GameManager.Instance.HunterVision
-                : GameManager.Instance.VictimVision;
+                         ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
+                               ? GameManager.Instance.HunterVisionOnCooldown
+                               : GameManager.Instance.HunterVision
+                         : GameManager.Instance.VictimVision;
         }
 
         gameObject.layer = IsHunter ? 8 : 9;
@@ -272,8 +272,8 @@ public class Player : NetworkBehaviour {
     private void VisibilityController() {
         _model.material =
             isLocalPlayer || !GameManager.Instance.GameStarted ? IsHunter
-                ? GameAssets.Instance.MaterialPlayerHunter
-                : GameAssets.Instance.MaterialPlayerLocal :
+                                                                     ? GameAssets.Instance.MaterialPlayerHunter
+                                                                     : GameAssets.Instance.MaterialPlayerLocal :
             GameManager.Instance.DisplayHunters && IsHunter ? GameAssets.Instance.MaterialPlayerHunter :
                                                               GameAssets.Instance.MaterialPlayerOther;
     }
@@ -287,7 +287,7 @@ public class Player : NetworkBehaviour {
             Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits, transform);
             if (!(nearest is null)) {
                 RaycastHit[] hits1 = Physics.RaycastAll(transform.position + new Vector3(0f, 1f, 0f),
-                                                        (nearest.position   + new Vector3(0f, 1f, 0f)) -
+                                                        (nearest.position + new Vector3(0f, 1f, 0f)) -
                                                         (transform.position + new Vector3(0f, 1f, 0f)),
                                                         Distance);
                 Transform nearest1 = PhysicsUtils.GetNearestHit(hits1, transform);
@@ -295,7 +295,7 @@ public class Player : NetworkBehaviour {
                     _lineRenderer.positionCount = 2;
                     _lineRenderer.SetPositions(new[] {
                                                          transform.position + new Vector3(0f, 1f, 0f),
-                                                         nearest.position   + new Vector3(0f, 1f, 0f)
+                                                         nearest.position + new Vector3(0f, 1f, 0f)
                                                      });
 
                     if (Input.GetKeyDown(KeyCode.Q)) {
@@ -391,14 +391,15 @@ public class Player : NetworkBehaviour {
     public void CmdTaskFinish(TaskPayload payload) {
         if (CurrentTask == null)
             return;
-        GameTask t = CurrentTask.GetComponent<GameTask>();
-        if (IsHunter && !t.HunterActive || !IsHunter && !t.VictimActive)
+        if (IsHunter && !CurrentTask.HunterActive || !IsHunter && !CurrentTask.VictimActive)
             return;
-        t.OnTaskFinish(this, payload.Data);
+        if (!CurrentTask.OnTaskFinish(this, payload.Data))
+            return;
         if (IsHunter)
-            t.LastHunterOpened = (float) NetworkTime.time;
+            CurrentTask.LastHunterOpened = (float) NetworkTime.time;
         else
-            t.LastVictimOpened = (float) NetworkTime.time;
+            CurrentTask.LastVictimOpened = (float) NetworkTime.time;
+        TargetSetTaskFinishedClient(connectionToClient, CurrentTask.gameObject);
         CurrentTask = null;
         TargetSetTask(connectionToClient, null);
     }
@@ -419,13 +420,34 @@ public class Player : NetworkBehaviour {
     public void CmdTaskStep(TaskPayload payload) {
         if (CurrentTask == null)
             return;
-        GameTask t = CurrentTask.GetComponent<GameTask>();
-        if (t.SetCooldownOnStep)
+        if (CurrentTask.SetCooldownOnStep)
             if (IsHunter)
-                t.LastHunterOpened = (float) NetworkTime.time;
+                CurrentTask.LastHunterOpened = (float) NetworkTime.time;
             else
-                t.LastVictimOpened = (float) NetworkTime.time;
-        t.OnTaskStep(this, payload.Data);
+                CurrentTask.LastVictimOpened = (float) NetworkTime.time;
+        CurrentTask.OnTaskStep(this, payload.Data);
+    }
+
+    [TargetRpc]
+    public void TargetTaskResponse(NetworkConnection conn, TaskPayload payload) {
+        if (CurrentTask == null)
+            return;
+        CurrentTask.OnTaskResponse(payload.Data);
+    }
+
+    [TargetRpc]
+    public void TargetSetTask(NetworkConnection conn, GameObject taskObject) {
+        if (taskObject == null) {
+            CurrentTask = null;
+            return;
+        }
+
+        CurrentTask = taskObject.GetComponent<GameTask>();
+    }
+
+    [TargetRpc]
+    public void TargetSetTaskFinishedClient(NetworkConnection conn, GameObject task) {
+        task.GetComponent<GameTask>().OnTaskFinishClient();
     }
 
     [ClientRpc]
@@ -437,23 +459,14 @@ public class Player : NetworkBehaviour {
     [ClientRpc]
     public void RpcResetRigidbody() {
         transform.rotation = Quaternion.identity;
-        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY |
+        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX |
+                                 RigidbodyConstraints.FreezeRotationY |
                                  RigidbodyConstraints.FreezeRotationZ;
     }
 
     [ClientRpc]
     public void RpcSetPosition(Vector3 position) {
         transform.position = position;
-    }
-
-    [TargetRpc]
-    public void TargetSetTask(NetworkConnection conn, GameObject taskObject) {
-        if (taskObject == null) {
-            CurrentTask = null;
-            return;
-        }
-
-        CurrentTask = taskObject.GetComponent<GameTask>();
     }
 
     [ClientRpc]
@@ -469,7 +482,8 @@ public class Player : NetworkBehaviour {
         RpcResetRigidbody();
         RpcPlayAnimation("Idle");
         transform.rotation = Quaternion.identity;
-        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY |
+        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX |
+                                 RigidbodyConstraints.FreezeRotationY |
                                  RigidbodyConstraints.FreezeRotationZ;
     }
 
@@ -491,9 +505,9 @@ public class Player : NetworkBehaviour {
 
     [TargetRpc]
     private void TargetSynchronizeTaskList(NetworkConnection conn, GameObject[] tasks) {
-        Debug.Log(tasks.Length);
         TaskList.Clear();
         TaskList.AddRange(tasks.Select(o => o.GetComponent<GameLocalTask>()));
+        TaskList.ForEach(task => task.ForceNotify());
     }
 
     private void OnGUI() {
@@ -505,7 +519,7 @@ public class Player : NetworkBehaviour {
         GUI.contentColor = Color.white;
         float width = GUI.skin.label.CalcSize(new GUIContent(Name)).x;
         GUI.DrawTexture(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 16f), _nameGradient);
-        GUI.Label(new Rect(pos.x       - width / 2f, Screen.height - pos.y - 8f, width, 20f), Name);
+        GUI.Label(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 20f), Name);
         GUI.contentColor = Color.white;
 
         if (isLocalPlayer) {
@@ -525,7 +539,7 @@ public class Player : NetworkBehaviour {
             if (GameManager.Instance.GameStarted) {
                 GUI.skin.label.fontSize = 36;
                 GUI.contentColor = Color.white;
-                string time = Utils.TimeToString(GameManager.Instance.TimeLimit - ((float) NetworkTime.time - GameManager.Instance.StartTime));
+                string time = Utils.TimeToString(GameManager.Instance.TimeLimit - ((float) NetworkTime.time - GameManager.Instance.StatusStartTime));
                 Vector2 size = GUI.skin.label.CalcSize(new GUIContent(time));
                 GUI.Label(new Rect(Screen.width / 2f - size.x / 2f, Screen.height - size.y, size.x, size.y), time);
                 GUI.skin.label.fontSize = GUI.skin.font.fontSize;

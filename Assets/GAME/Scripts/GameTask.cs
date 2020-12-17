@@ -26,10 +26,10 @@ public abstract class GameTask : NetworkBehaviour {
     public float LastHunterOpened;
 
     protected Light light;
-    
-    private bool  _firstCome;
-    private bool  _oldVictimActive;
-    private bool  _oldHunterActive;
+
+    private bool _firstCome;
+    private bool _oldVictimActive;
+    private bool _oldHunterActive;
 
     protected virtual void Awake() {
         light = transform.Find("TaskLight")?.GetComponent<Light>();
@@ -92,7 +92,7 @@ public abstract class GameTask : NetworkBehaviour {
 
     public abstract bool OnTaskOpen(Player player);
 
-    public abstract void OnTaskFinish(Player player, params object[] data);
+    public abstract bool OnTaskFinish(Player player, params object[] data);
 
     public abstract void OnTaskClose(Player player);
 
@@ -110,6 +110,21 @@ public abstract class GameTask : NetworkBehaviour {
 
     public virtual void OnTaskCloseClient() {
         _firstCome = true;
+    }
+
+    public virtual void OnTaskResponse(params object[] data) {
+    }
+
+    public void SendTaskStep(params object[] data) {
+        Player.Local.CmdTaskStep(new TaskPayload(data));
+    }
+
+    public void SendTaskFinish(params object[] data) {
+        Player.Local.CmdTaskFinish(new TaskPayload(data));
+    }
+
+    public void SendTaskResponse(Player player, params object[] data) {
+        player.TargetTaskResponse(player.connectionToClient, new TaskPayload(data));
     }
 
     public virtual void OnGUI() {
