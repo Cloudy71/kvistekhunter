@@ -38,6 +38,7 @@ public class VentTask : GameTask {
             player.RpcSetPosition(transform.position);
             return false;
         }
+
         player.RpcSetPosition(transform.position);
 
         return true;
@@ -66,14 +67,24 @@ public class VentTask : GameTask {
     public override void OnTaskOpenClient() {
     }
 
+    public override void OnTaskUpdateClient() {
+        base.OnTaskUpdateClient();
+        for (var i = 0; i < Path.Length; ++i) {
+            if (Input.GetKeyDown((i + 1).ToString())) {
+                SendTaskFinish(Path[i]);
+            }
+        }
+    }
+
     public override void OnTaskGUI() {
         base.OnTaskGUI();
 
+        int i = 1;
         foreach (GameObject pathObject in Path) {
             Vector3 pathPos = pathObject.transform.position;
             Vector3 realArrowPos = Vector3.MoveTowards(transform.position, pathPos, 2f);
             Vector3 screenPos = GameManager.GetCamera().WorldToScreenPoint(realArrowPos);
-            if (GUI.Button(new Rect(screenPos.x - 16f, Screen.height - screenPos.y - 16f, 32f, 32f), "")) {
+            if (GUI.Button(new Rect(screenPos.x - 16f, Screen.height - screenPos.y - 16f, 32f, 32f), (i++).ToString())) {
                 SendTaskFinish(pathObject);
             }
         }

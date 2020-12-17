@@ -111,10 +111,10 @@ public class Player : NetworkBehaviour {
     void Update() {
         if (isServer) {
             Vision = IsHunter
-                         ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
-                               ? GameManager.Instance.HunterVisionOnCooldown
-                               : GameManager.Instance.HunterVision
-                         : GameManager.Instance.VictimVision;
+                ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
+                    ? GameManager.Instance.HunterVisionOnCooldown
+                    : GameManager.Instance.HunterVision
+                : GameManager.Instance.VictimVision;
         }
 
         gameObject.layer = IsHunter ? 8 : 9;
@@ -225,6 +225,9 @@ public class Player : NetworkBehaviour {
             CurrentTask.OnTaskCloseClient();
             CmdTaskClose();
         }
+
+        if (CurrentTask != null)
+            CurrentTask.OnTaskUpdateClient();
     }
 
     private void CameraMovement() {
@@ -272,8 +275,8 @@ public class Player : NetworkBehaviour {
     private void VisibilityController() {
         _model.material =
             isLocalPlayer || !GameManager.Instance.GameStarted ? IsHunter
-                                                                     ? GameAssets.Instance.MaterialPlayerHunter
-                                                                     : GameAssets.Instance.MaterialPlayerLocal :
+                ? GameAssets.Instance.MaterialPlayerHunter
+                : GameAssets.Instance.MaterialPlayerLocal :
             GameManager.Instance.DisplayHunters && IsHunter ? GameAssets.Instance.MaterialPlayerHunter :
                                                               GameAssets.Instance.MaterialPlayerOther;
     }
@@ -287,7 +290,7 @@ public class Player : NetworkBehaviour {
             Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits, transform);
             if (!(nearest is null)) {
                 RaycastHit[] hits1 = Physics.RaycastAll(transform.position + new Vector3(0f, 1f, 0f),
-                                                        (nearest.position + new Vector3(0f, 1f, 0f)) -
+                                                        (nearest.position   + new Vector3(0f, 1f, 0f)) -
                                                         (transform.position + new Vector3(0f, 1f, 0f)),
                                                         Distance);
                 Transform nearest1 = PhysicsUtils.GetNearestHit(hits1, transform);
@@ -295,7 +298,7 @@ public class Player : NetworkBehaviour {
                     _lineRenderer.positionCount = 2;
                     _lineRenderer.SetPositions(new[] {
                                                          transform.position + new Vector3(0f, 1f, 0f),
-                                                         nearest.position + new Vector3(0f, 1f, 0f)
+                                                         nearest.position   + new Vector3(0f, 1f, 0f)
                                                      });
 
                     if (Input.GetKeyDown(KeyCode.Q)) {
@@ -519,7 +522,7 @@ public class Player : NetworkBehaviour {
         GUI.contentColor = Color.white;
         float width = GUI.skin.label.CalcSize(new GUIContent(Name)).x;
         GUI.DrawTexture(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 16f), _nameGradient);
-        GUI.Label(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 20f), Name);
+        GUI.Label(new Rect(pos.x       - width / 2f, Screen.height - pos.y - 8f, width, 20f), Name);
         GUI.contentColor = Color.white;
 
         if (isLocalPlayer) {

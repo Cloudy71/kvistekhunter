@@ -112,6 +112,9 @@ public abstract class GameTask : NetworkBehaviour {
         _firstCome = true;
     }
 
+    public virtual void OnTaskUpdateClient() {
+    }
+
     public virtual void OnTaskResponse(params object[] data) {
     }
 
