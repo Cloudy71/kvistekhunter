@@ -43,6 +43,9 @@ public class Player : NetworkBehaviour {
     [SyncVar]
     public bool SeesEveryone;
 
+    [SyncVar(hook = "VisibilityColorHook")]
+    public Color Color;
+
     public GameTask            CurrentTask;
     public List<GameLocalTask> TaskList;
 
@@ -120,7 +123,7 @@ public class Player : NetworkBehaviour {
         gameObject.layer = IsHunter ? 8 : 9;
 
         SyncMovement();
-        VisibilityController();
+        // VisibilityController();
         if (!isLocalPlayer) return;
         Movement();
         CameraMovement();
@@ -273,12 +276,22 @@ public class Player : NetworkBehaviour {
     }
 
     private void VisibilityController() {
-        _model.material =
-            isLocalPlayer || !GameManager.Instance.GameStarted ? IsHunter
-                ? GameAssets.Instance.MaterialPlayerHunter
-                : GameAssets.Instance.MaterialPlayerLocal :
-            GameManager.Instance.DisplayHunters && IsHunter ? GameAssets.Instance.MaterialPlayerHunter :
-                                                              GameAssets.Instance.MaterialPlayerOther;
+        // _model.material =
+        //     isLocalPlayer || !GameManager.Instance.GameStarted ? IsHunter
+        //         ? GameAssets.Instance.MaterialPlayerHunter
+        //         : GameAssets.Instance.MaterialPlayerLocal :
+        //     GameManager.Instance.DisplayHunters && IsHunter ? GameAssets.Instance.MaterialPlayerHunter :
+        //                                                       GameAssets.Instance.MaterialPlayerOther;
+        _model.material = isLocalPlayer ? GameAssets.Instance.MaterialPlayerLocal : GameAssets.Instance.MaterialPlayerOther;
+        _model.material.SetColor("_Color", isLocalPlayer && !IsHunter ? GameManager.Instance.DefaultColor : Color);
+    }
+
+    private void VisibilityColorHook(Color oldColor, Color newColor) {
+        VisibilityController();
+        _model.material.SetColor("_Color", isLocalPlayer && !IsHunter ? GameManager.Instance.DefaultColor : newColor);
+        Debug.Log("COLOR HOOK = " + newColor);
+        // if (!IsHunter)
+        //     GameManager.Instance.ReplaceUsedColor(oldColor, newColor);
     }
 
     private void HunterController() {
@@ -286,7 +299,7 @@ public class Player : NetworkBehaviour {
             return;
 
         if (NetworkTime.time >= LastAction + Cooldown) {
-            RaycastHit[] hits = Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance);
+            RaycastHit[] hits = Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance / 2f);
             Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits, transform);
             if (!(nearest is null)) {
                 RaycastHit[] hits1 = Physics.RaycastAll(transform.position + new Vector3(0f, 1f, 0f),
@@ -341,7 +354,7 @@ public class Player : NetworkBehaviour {
     }
 
     private void KillInternal(GameObject target) {
-        if (NetworkTime.time < LastAction + Cooldown || Vector3.Distance(transform.position, target.transform.position) > Distance)
+        if (GameStatus.Instance.LightsOff || NetworkTime.time < LastAction + Cooldown || Vector3.Distance(transform.position, target.transform.position) > Distance)
             return;
         // RaycastHit[] hits = Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance);
         // Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits, transform);
@@ -513,17 +526,36 @@ public class Player : NetworkBehaviour {
         TaskList.ForEach(task => task.ForceNotify());
     }
 
+    [Command]
+    private void CmdChangeColor(Color color) {
+        SetColor(color);
+    }
+
+    public void SetColor(Color color) {
+        if (isServer) {
+            Color oldColor = Color;
+            Color = color;
+            GameManager.Instance.ReplaceUsedColor(oldColor, color, IsHunter);
+        }
+        else {
+            CmdChangeColor(color);
+        }
+    }
+
     private void OnGUI() {
         if (!_model.isVisible || GameManager.GetCamera() == null)
             return;
 
         Vector3 pos = GameManager.GetCamera().WorldToScreenPoint(transform.position + new Vector3(0f, 2.8f, 0f));
 
-        GUI.contentColor = Color.white;
-        float width = GUI.skin.label.CalcSize(new GUIContent(Name)).x;
-        GUI.DrawTexture(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 16f), _nameGradient);
-        GUI.Label(new Rect(pos.x       - width / 2f, Screen.height - pos.y - 8f, width, 20f), Name);
-        GUI.contentColor = Color.white;
+        if (!GameManager.Instance.GameStarted || Local.IsHunter) {
+            GUI.contentColor = Color.white;
+            float width = GUI.skin.label.CalcSize(new GUIContent(Name)).x;
+            GUI.DrawTexture(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 16f), _nameGradient);
+            GUI.contentColor = IsHunter ? Color.red : Color.white;
+            GUI.Label(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 20f), Name);
+            GUI.contentColor = Color.white;
+        }
 
         if (isLocalPlayer) {
             if (IsHunter) {
@@ -537,6 +569,22 @@ public class Player : NetworkBehaviour {
                               cd.ToString(CultureInfo.InvariantCulture));
                     GUI.contentColor = Color.white;
                 }
+
+                List<Color> usedColors = GameManager.Instance.GetUsedColors();
+                GUI.Box(new Rect(8f, Screen.height - 8f - (usedColors.Count * 32f) - 8f, 128f, usedColors.Count * 32f + 8f), "");
+                for (var i = 0; i < usedColors.Count; i++) {
+                    Texture2D clr = AssetLoader.GetColor(usedColors[i]);
+                    GUI.skin.button.normal.background = clr;
+                    GUI.skin.button.hover.background = clr;
+                    GUI.skin.button.active.background = clr;
+                    if (GUI.Button(new Rect(12f, Screen.height - 8f - (i * 32f) - 32f, 120f, 24f), "")) {
+                        SetColor(usedColors[i]);
+                    }
+                }
+
+                GUI.skin.button.normal.background = GameAssets.DefaultUnityNormalBackground;
+                GUI.skin.button.hover.background = GameAssets.DefaultUnityHoverBackground;
+                GUI.skin.button.active.background = GameAssets.DefaultUnityActiveBackground;
             }
 
             if (GameManager.Instance.GameStarted) {

@@ -32,6 +32,12 @@ public class GameManager : NetworkManager {
     public int   VictimShortTasks       = 1;
     public float TimeLimit              = 600f;
     public float HunterHealth           = 100f;
+    public Color DefaultColor           = Color.gray;
+
+    public Color[] PreCreatedColors = {
+                                          Color.red, Color.green, Color.blue, Color.yellow, Color.cyan, Color.white,
+                                          new Color32(255, 128, 255, 255), (Color) new Color32(160, 0, 192, 255)
+                                      };
 
     [HideInInspector]
     public float StatusStartTime;
@@ -39,9 +45,10 @@ public class GameManager : NetworkManager {
     [HideInInspector]
     public float StatusHunterHealth;
 
-    private Transform _panelGameInfo;
-    private Button    _startButton;
-    private Camera    _camera;
+    private Transform   _panelGameInfo;
+    private Button      _startButton;
+    private Camera      _camera;
+    private List<Color> _usedColors;
 
     public override void Awake() {
         base.Awake();
@@ -55,6 +62,7 @@ public class GameManager : NetworkManager {
         _panelGameInfo = GameObject.Find("Canvas/PanelGameInfo").transform;
         _startButton = _panelGameInfo.Find("ButtonStart").GetComponent<Button>();
         _panelGameInfo.gameObject.SetActive(false);
+        _usedColors = new List<Color>();
         // }
         // else {
         //     GameStarted = true;
@@ -117,6 +125,7 @@ public class GameManager : NetworkManager {
         base.OnStartClient();
         NetworkClient.RegisterHandler<MessageGameInfo>(MessageGameInfoClientHandler, false);
         NetworkClient.RegisterHandler<MessageGameStatus>(MessageGameStatusClientHandler, false);
+        NetworkClient.RegisterHandler<MessageUsedColors>(MessageUsedColorsClientHandler, false);
 
         _panelGameInfo.gameObject.SetActive(true);
 
@@ -281,7 +290,12 @@ public class GameManager : NetworkManager {
         else {
             GameScreenDrawer.Instance.Intro = true;
             GameScreenDrawer.Instance.Outro = false;
+            _usedColors.Clear();
         }
+    }
+
+    private void MessageUsedColorsClientHandler(MessageUsedColors msg) {
+        _usedColors = msg.UsedColors;
     }
 
     private void MessagePlayerInfoServerHandler(NetworkConnection conn, MessagePlayerInfo msg) {
@@ -302,6 +316,7 @@ public class GameManager : NetworkManager {
             return;
 
         GameStarted = true;
+        _usedColors.Clear();
         msg.Admin = Admin.gameObject;
         NetworkServer.SendToAll(msg);
         StatusStartTime = (float) NetworkTime.time;
@@ -325,17 +340,27 @@ public class GameManager : NetworkManager {
 
         Player.HunterPlayer = null;
 
+        List<Color> availableColors = new List<Color>(PreCreatedColors);
         foreach (KeyValuePair<int, NetworkConnectionToClient> player in NetworkServer.connections) {
             Player p = player.Value.identity.GetComponent<Player>();
             p.IsHunter = false;
-            foreach (int hunter in hunters) {
-                if (player.Key == connectionIds[hunter]) {
-                    // p.IsHunter = true;
-                    if (Player.HunterPlayer == null)
-                        Player.HunterPlayer = p;
-                }
+            Debug.Log("Color = " + p.Color);
+            if (p.Name == "HUNTER") {
+                p.IsHunter = true;
+                Player.HunterPlayer = p;
             }
+            // foreach (int hunter in hunters) {
+            //     if (player.Key == connectionIds[hunter]) {
+            //         if (p.Name == "HUNTER")
+            //             p.IsHunter = true;
+            //         if (Player.HunterPlayer == null)
+            //             Player.HunterPlayer = p;
+            //     }
+            // }
 
+            int colorIndex = Random.Range(0, availableColors.Count);
+            p.SetColor(availableColors[colorIndex]);
+            availableColors.RemoveAt(colorIndex);
             p.RefreshStats();
         }
 
@@ -398,5 +423,44 @@ public class GameManager : NetworkManager {
             p.transform.position = startPosition.position;
             p.RpcSetPosition(p.transform.position);
         }
+    }
+
+    public List<Color> GetUsedColors() {
+        return _usedColors;
+        // if (_usedColors != null)
+        //     return _usedColors;
+        //
+        // List<Color> usedColors = new List<Color>();
+        // usedColors.Add(Player.Local.Color);
+        // Player[] players = GameObject.FindObjectsOfType<Player>();
+        // foreach (Player player in players) {
+        //     if (usedColors.Contains(player.Color))
+        //         continue;
+        //     usedColors.Add(player.Color);
+        // }
+        //
+        // _usedColors = usedColors.ToArray();
+        // return _usedColors;
+    }
+
+    public void ReplaceUsedColor(Color oldColor, Color newColor, bool dontDelete = false) {
+        if (_usedColors == null)
+            return;
+        bool changed = false;
+        if (!dontDelete)
+            for (var i = 0; i < _usedColors.Count; i++) {
+                if (_usedColors[i] == oldColor) {
+                    _usedColors[i] = newColor;
+                    changed = true;
+                    break;
+                }
+            }
+
+        if (!changed) {
+            if (!_usedColors.Contains(newColor))
+                _usedColors.Add(newColor);
+        }
+
+        NetworkServer.SendToAll(new MessageUsedColors {UsedColors = _usedColors});
     }
 }
