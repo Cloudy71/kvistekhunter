@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -31,8 +32,8 @@ public class GameManager : NetworkManager {
     public int   VictimLongTasks        = 1;
     public int   VictimShortTasks       = 1;
     public float TimeLimit              = 600f;
-    public float HunterHealth           = 100f;
     public Color DefaultColor           = Color.gray;
+    public bool  TasksBalancedDamage    = false;
 
     public Color[] PreCreatedColors = {
                                           Color.red, Color.green, Color.blue, Color.yellow, Color.cyan, Color.white,
@@ -43,7 +44,16 @@ public class GameManager : NetworkManager {
     public float StatusStartTime;
 
     [HideInInspector]
-    public float StatusHunterHealth;
+    public int StatusHuntersMaxHealth;
+
+    [HideInInspector]
+    public int StatusHuntersHealth;
+
+    [HideInInspector]
+    public int StatusVictimsMaxHealth;
+
+    [HideInInspector]
+    public int StatusVictimsHealth;
 
     private Transform   _panelGameInfo;
     private Button      _startButton;
@@ -126,6 +136,7 @@ public class GameManager : NetworkManager {
         NetworkClient.RegisterHandler<MessageGameInfo>(MessageGameInfoClientHandler, false);
         NetworkClient.RegisterHandler<MessageGameStatus>(MessageGameStatusClientHandler, false);
         NetworkClient.RegisterHandler<MessageUsedColors>(MessageUsedColorsClientHandler, false);
+        NetworkClient.RegisterHandler<MessageGameStatusData>(MessageGameStatusDataClientHandler, false);
 
         _panelGameInfo.gameObject.SetActive(true);
 
@@ -186,7 +197,8 @@ public class GameManager : NetworkManager {
                                                        VictimLongTasks = VictimLongTasks,
                                                        VictimShortTasks = VictimShortTasks,
                                                        TimeLimit = TimeLimit,
-                                                       HunterHealth = HunterHealth
+                                                       DefaultColor = DefaultColor,
+                                                       TasksBalancedDamage = TasksBalancedDamage
                                                    };
         if (NetworkServer.active) {
             if (conn != null)
@@ -230,7 +242,8 @@ public class GameManager : NetworkManager {
         //     return;
 
         MessageGameStatus status = new MessageGameStatus {
-                                                             GameStarted = true
+                                                             GameStarted = true,
+                                                             GameFinished = false
                                                          };
         NetworkClient.Send(status);
     }
@@ -272,7 +285,8 @@ public class GameManager : NetworkManager {
         VictimLongTasks = msg.VictimLongTasks;
         VictimShortTasks = msg.VictimShortTasks;
         TimeLimit = msg.TimeLimit;
-        HunterHealth = msg.HunterHealth;
+        DefaultColor = msg.DefaultColor;
+        TasksBalancedDamage = msg.TasksBalancedDamage;
     }
 
     private void MessageGameInfoClientHandler(MessageGameInfo msg) {
@@ -284,10 +298,14 @@ public class GameManager : NetworkManager {
         GameStarted = msg.GameStarted;
         Admin = msg.Admin.GetComponent<Player>();
         if (!GameStarted) {
-            StatusStartTime = (float) NetworkTime.time;
-            RefreshGameInfo();
+            if (msg.GameFinished) {
+            }
+            else {
+                RefreshGameInfo();
+            }
         }
         else {
+            StatusStartTime = (float) NetworkTime.time;
             GameScreenDrawer.Instance.Intro = true;
             GameScreenDrawer.Instance.Outro = false;
             _usedColors.Clear();
@@ -296,6 +314,13 @@ public class GameManager : NetworkManager {
 
     private void MessageUsedColorsClientHandler(MessageUsedColors msg) {
         _usedColors = msg.UsedColors;
+    }
+
+    private void MessageGameStatusDataClientHandler(MessageGameStatusData msg) {
+        StatusHuntersHealth = msg.HuntersHealth;
+        StatusHuntersMaxHealth = msg.HuntersMaxHealth;
+        StatusVictimsHealth = msg.VictimsHealth;
+        StatusVictimsMaxHealth = msg.VictimsMaxHealth;
     }
 
     private void MessagePlayerInfoServerHandler(NetworkConnection conn, MessagePlayerInfo msg) {
@@ -364,8 +389,6 @@ public class GameManager : NetworkManager {
             p.RefreshStats();
         }
 
-        StatusHunterHealth = HunterHealth;
-
         ServerChangeScene("SampleScene");
     }
 
@@ -389,6 +412,8 @@ public class GameManager : NetworkManager {
             availableCommonTasks.RemoveAt(taskIndex);
         }
 
+        int huntersHealth = 0;
+        int victimsHealth = 0;
         foreach (KeyValuePair<int, NetworkConnectionToClient> player in NetworkServer.connections) {
             Player p = player.Value.identity.GetComponent<Player>();
             Transform startPosition = GetStartPosition();
@@ -405,7 +430,7 @@ public class GameManager : NetworkManager {
                     }
 
                     List<GameLocalTask> availableTasks = new List<GameLocalTask>(typedTasks[taskType]);
-                    int req = taskType == GameLocalTask.LocalTaskType.Common ? VictimCommonTasks : taskType == GameLocalTask.LocalTaskType.Long ? VictimLongTasks : VictimShortTasks;
+                    int req = taskType == GameLocalTask.LocalTaskType.Long ? VictimLongTasks : VictimShortTasks;
                     total = availableTasks.Count;
                     Debug.Log(taskType + " => " + total);
                     for (int i = 0; i < (req <= total ? req : total); ++i) {
@@ -415,6 +440,12 @@ public class GameManager : NetworkManager {
                     }
                 }
 
+                foreach (GameLocalTask gameLocalTask in p.TaskList) {
+                    huntersHealth += gameLocalTask.Damage;
+                }
+
+                victimsHealth += p.Lives;
+
                 p.SynchronizeTaskList();
             }
 
@@ -423,7 +454,27 @@ public class GameManager : NetworkManager {
             p.transform.position = startPosition.position;
             p.RpcSetPosition(p.transform.position);
         }
+
+        // StartCoroutine(SendTaskList(1f));
+
+        StatusHuntersMaxHealth = huntersHealth;
+        SetHuntersHealth(huntersHealth, true);
+        StatusVictimsMaxHealth = victimsHealth;
+        SetVictimsHealth(victimsHealth);
     }
+
+    public override void OnClientSceneChanged(NetworkConnection conn) {
+        base.OnClientSceneChanged(conn);
+        conn.identity.GetComponent<Player>().SynchronizeTaskList();
+    }
+
+    // private IEnumerator SendTaskList(float time) {
+    //     yield return new WaitForSeconds(time);
+    //
+    //     foreach (KeyValuePair<int, NetworkConnectionToClient> networkConnectionToClient in NetworkServer.connections) {
+    //         networkConnectionToClient.Value.identity.GetComponent<Player>().SynchronizeTaskList();
+    //     }
+    // }
 
     public List<Color> GetUsedColors() {
         return _usedColors;
@@ -462,5 +513,24 @@ public class GameManager : NetworkManager {
         }
 
         NetworkServer.SendToAll(new MessageUsedColors {UsedColors = _usedColors});
+    }
+
+    public void SendCurrentGameStatusData() {
+        NetworkServer.SendToAll(new MessageGameStatusData {
+                                                              HuntersMaxHealth = StatusHuntersMaxHealth,
+                                                              HuntersHealth = StatusHuntersHealth,
+                                                              VictimsMaxHealth = StatusVictimsMaxHealth,
+                                                              VictimsHealth = StatusVictimsHealth
+                                                          });
+    }
+
+    public void SetHuntersHealth(int health, bool skipSendInfo = false) {
+        StatusHuntersHealth = health;
+        if (!skipSendInfo) SendCurrentGameStatusData();
+    }
+
+    public void SetVictimsHealth(int health, bool skipSendInfo = false) {
+        StatusVictimsHealth = health;
+        if (!skipSendInfo) SendCurrentGameStatusData();
     }
 }

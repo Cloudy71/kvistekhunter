@@ -56,9 +56,7 @@ public class LineDoorTask : GameTask {
                 int state = ((_buttons >> pos) & 0b1) == 1                                  ? 1 :
                             ((Buttons >> pos) & 0b1) == 1 && ((_buttons >> pos) & 0b1) == 0 ? 2 : 0;
                 Texture2D tex = state == 0 ? _regularBackground : state == 1 ? _tickedBackground : _unTickedBackground;
-                GUI.skin.button.normal.background = tex;
-                GUI.skin.button.hover.background = tex;
-                GUI.skin.button.active.background = tex;
+                GUITaskUtils.SetBackground(tex);
                 if (GUI.Button(new Rect(Screen.width / 2f - 248f + j * 256f, Screen.height / 2f - 248f + i * 128f, 240f, 112f), "")) {
                     if (state == 1) {
                         _buttons ^= (byte) (0b1 << pos);
@@ -74,9 +72,7 @@ public class LineDoorTask : GameTask {
             SendTaskFinish();
         }
 
-        GUI.skin.button.normal.background = GameAssets.DefaultUnityNormalBackground;
-        GUI.skin.button.hover.background = GameAssets.DefaultUnityHoverBackground;
-        GUI.skin.button.active.background = GameAssets.DefaultUnityActiveBackground;
+        GUITaskUtils.SetBackground(null);
 
         // GUI.skin.button.normal.background = 
     }

@@ -25,8 +25,8 @@ public class GeneratorTask : GameTask {
         }
     }
 
-    public override void OnTaskResponse(params object[] data) {
-        base.OnTaskResponse(data);
+    public override void OnTaskResponseClient(params object[] data) {
+        base.OnTaskResponseClient(data);
         int type = (int) data[0];
         if (type == 0) {
             _timeCodeDisplayed = Time.time;

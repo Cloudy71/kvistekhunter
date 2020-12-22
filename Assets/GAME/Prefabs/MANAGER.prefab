@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 108540408289238609}
   - component: {fileID: 622258267}
   - component: {fileID: 8649837706283867694}
-  - component: {fileID: 8300128875199973728}
+  - component: {fileID: 7078331778414498887}
   m_Layer: 0
   m_Name: MANAGER
   m_TagString: Untagged
@@ -54,7 +54,7 @@ MonoBehaviour:
   serverTickRate: 30
   offlineScene: 
   onlineScene: 
-  transport: {fileID: 8300128875199973728}
+  transport: {fileID: 7078331778414498887}
   networkAddress: localhost
   maxConnections: 10
   disconnectInactiveConnections: 0
@@ -81,8 +81,8 @@ MonoBehaviour:
   VictimLongTasks: 1
   VictimShortTasks: 1
   TimeLimit: 600
-  HunterHealth: 100
   DefaultColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  TasksBalancedDamage: 0
   PreCreatedColors:
   - {r: 1, g: 0, b: 0, a: 1}
   - {r: 0, g: 1, b: 0, a: 1}
@@ -93,7 +93,10 @@ MonoBehaviour:
   - {r: 1, g: 0.5019608, b: 1, a: 1}
   - {r: 0.627451, g: 0, b: 0.7529412, a: 1}
   StatusStartTime: 0
-  StatusHunterHealth: 0
+  StatusHuntersMaxHealth: 0
+  StatusHuntersHealth: 0
+  StatusVictimsMaxHealth: 0
+  StatusVictimsHealth: 0
 --- !u!114 &108540408289238609
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -141,7 +144,7 @@ MonoBehaviour:
   IntroVictimSprite: {fileID: 21300000, guid: 95a9a49a771cd0a4295d4c09b6c8bf39, type: 3}
   IntroHunterSprite: {fileID: 21300000, guid: a9a678d9c99889b4cbed0aeaa02e6019, type: 3}
   AdminTableRenderTexture: {fileID: 8400000, guid: 5a4d262a3abac1740af1454d5f9630ff, type: 2}
---- !u!114 &8300128875199973728
+--- !u!114 &7078331778414498887
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -150,7 +153,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 108540408289238623}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c7424c1070fad4ba2a7a96b02fbeb4bb, type: 3}
+  m_Script: {fileID: 11500000, guid: 6b0fecffa3f624585964b0d0eb21b18e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   OnClientConnected:
@@ -177,9 +180,11 @@ MonoBehaviour:
   OnServerDisconnected:
     m_PersistentCalls:
       m_Calls: []
-  port: 7777
+  Port: 7777
   NoDelay: 1
-  serverMaxMessageSize: 16384
-  serverMaxReceivesPerTick: 10000
-  clientMaxMessageSize: 16384
-  clientMaxReceivesPerTick: 1000
+  Interval: 10
+  FastResend: 0
+  CongestionWindow: 1
+  SendWindowSize: 128
+  ReceiveWindowSize: 128
+  debugGUI: 0

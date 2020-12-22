@@ -8,8 +8,8 @@ public abstract class GameLocalTask : GameTask {
         Short
     }
 
-    public bool  SelfActive;
-    public float Damage;
+    public bool SelfActive;
+    public int  Damage;
 
     public LocalTaskType Type;
 
@@ -46,6 +46,7 @@ public abstract class GameLocalTask : GameTask {
     public override bool OnTaskFinish(Player player, params object[] data) {
         player.TaskList.Remove(this);
         player.SynchronizeTaskList();
+        GameManager.Instance.SetHuntersHealth(GameManager.Instance.StatusHuntersHealth - Damage);
         return true;
     }
 

@@ -54,9 +54,7 @@ public class LightsTask : GameTask {
         for (int i = 0; i < 8; ++i) {
             int state = ((_buttons >> i) & 0b1) == 1 ? 1 : 0;
             Texture2D tex = state == 0 ? _unTickedBackground : _tickedBackground;
-            GUI.skin.button.normal.background = tex;
-            GUI.skin.button.hover.background = tex;
-            GUI.skin.button.active.background = tex;
+            GUITaskUtils.SetBackground(tex);
             if (GUI.Button(new Rect(Screen.width / 2f - 248f + i * 64f, Screen.height / 2f - 56f, 48f, 112f), "")) {
                 if (state == 1) {
                     _buttons ^= (byte) (0b1 << i);
@@ -73,8 +71,6 @@ public class LightsTask : GameTask {
             OnTaskFinishClient();
         }
 
-        GUI.skin.button.normal.background = GameAssets.DefaultUnityNormalBackground;
-        GUI.skin.button.hover.background = GameAssets.DefaultUnityHoverBackground;
-        GUI.skin.button.active.background = GameAssets.DefaultUnityActiveBackground;
+        GUITaskUtils.SetBackground(null);
     }
 }

@@ -1,10 +1,10 @@
 using Mirror;
 using UnityEngine;
 
-public class TaskPayload {
+public class CustomPayload {
     public object[] Data;
 
-    public TaskPayload(params object[] data) {
+    public CustomPayload(params object[] data) {
         Data = data;
     }
 }
@@ -36,7 +36,7 @@ public static class TaskPayloadSerializer {
         return null;
     }
 
-    public static void WriteTaskPayload(this NetworkWriter writer, TaskPayload payload) {
+    public static void WriteTaskPayload(this NetworkWriter writer, CustomPayload payload) {
         if (payload == null) {
             writer.WriteInt32(0);
             return;
@@ -50,8 +50,8 @@ public static class TaskPayloadSerializer {
         }
     }
 
-    public static TaskPayload ReadTaskPayload(this NetworkReader reader) {
-        TaskPayload payload = new TaskPayload();
+    public static CustomPayload ReadTaskPayload(this NetworkReader reader) {
+        CustomPayload payload = new CustomPayload();
         int size = reader.ReadInt32();
         payload.Data = new object[size];
         for (int i = 0; i < size; ++i) {

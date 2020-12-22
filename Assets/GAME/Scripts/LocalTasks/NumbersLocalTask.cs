@@ -43,8 +43,8 @@ public class NumbersLocalTask : GameLocalTask {
             _current = "";
     }
 
-    public override void OnTaskResponse(params object[] data) {
-        base.OnTaskResponse(data);
+    public override void OnTaskResponseClient(params object[] data) {
+        base.OnTaskResponseClient(data);
         if (!(bool) data[0])
             _current = "";
     }

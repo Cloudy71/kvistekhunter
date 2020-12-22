@@ -115,19 +115,19 @@ public abstract class GameTask : NetworkBehaviour {
     public virtual void OnTaskUpdateClient() {
     }
 
-    public virtual void OnTaskResponse(params object[] data) {
+    public virtual void OnTaskResponseClient(params object[] data) {
     }
 
     public void SendTaskStep(params object[] data) {
-        Player.Local.CmdTaskStep(new TaskPayload(data));
+        Player.Local.CmdTaskStep(new CustomPayload(data));
     }
 
     public void SendTaskFinish(params object[] data) {
-        Player.Local.CmdTaskFinish(new TaskPayload(data));
+        Player.Local.CmdTaskFinish(new CustomPayload(data));
     }
 
     public void SendTaskResponse(Player player, params object[] data) {
-        player.TargetTaskResponse(player.connectionToClient, new TaskPayload(data));
+        player.TargetTaskResponse(player.connectionToClient, new CustomPayload(data));
     }
 
     public virtual void OnGUI() {

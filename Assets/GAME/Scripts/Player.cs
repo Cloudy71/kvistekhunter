@@ -70,6 +70,7 @@ public class Player : NetworkBehaviour {
         _animator = transform.Find("Model").GetComponent<Animator>();
         _syncMovementKeys = 0b0000;
         _oldVelocity = Vector3.zero;
+        TaskList = new List<GameLocalTask>();
     }
 
     // Start is called before the first frame update
@@ -78,7 +79,6 @@ public class Player : NetworkBehaviour {
             RefreshStats();
             Points = 0;
             LastAction = -1000f;
-            TaskList = new List<GameLocalTask>();
         }
 
         DontDestroyOnLoad(gameObject);
@@ -95,8 +95,10 @@ public class Player : NetworkBehaviour {
 
     public override void OnStartClient() {
         base.OnStartClient();
-        Debug.Log("CLIENT START.");
         _animator.Play("Idle");
+        if (isLocalPlayer || GetLocal == null)
+            return;
+        GetLocal.CmdResendData(gameObject);
     }
 
     public void RefreshStats() {
@@ -114,10 +116,10 @@ public class Player : NetworkBehaviour {
     void Update() {
         if (isServer) {
             Vision = IsHunter
-                ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
-                    ? GameManager.Instance.HunterVisionOnCooldown
-                    : GameManager.Instance.HunterVision
-                : GameManager.Instance.VictimVision;
+                         ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
+                               ? GameManager.Instance.HunterVisionOnCooldown
+                               : GameManager.Instance.HunterVision
+                         : GameManager.Instance.VictimVision;
         }
 
         gameObject.layer = IsHunter ? 8 : 9;
@@ -303,7 +305,7 @@ public class Player : NetworkBehaviour {
             Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits, transform);
             if (!(nearest is null)) {
                 RaycastHit[] hits1 = Physics.RaycastAll(transform.position + new Vector3(0f, 1f, 0f),
-                                                        (nearest.position   + new Vector3(0f, 1f, 0f)) -
+                                                        (nearest.position + new Vector3(0f, 1f, 0f)) -
                                                         (transform.position + new Vector3(0f, 1f, 0f)),
                                                         Distance);
                 Transform nearest1 = PhysicsUtils.GetNearestHit(hits1, transform);
@@ -311,7 +313,7 @@ public class Player : NetworkBehaviour {
                     _lineRenderer.positionCount = 2;
                     _lineRenderer.SetPositions(new[] {
                                                          transform.position + new Vector3(0f, 1f, 0f),
-                                                         nearest.position   + new Vector3(0f, 1f, 0f)
+                                                         nearest.position + new Vector3(0f, 1f, 0f)
                                                      });
 
                     if (Input.GetKeyDown(KeyCode.Q)) {
@@ -333,6 +335,12 @@ public class Player : NetworkBehaviour {
         RpcSyncMovement(position, keys);
     }
 
+    [Command]
+    public void CmdResendData(GameObject player, NetworkConnectionToClient sender = null) {
+        Player p = player.GetComponent<Player>();
+        p.TargetSyncMovement(sender, p.transform.position, p._syncMovementKeys);
+    }
+
     [ClientRpc]
     private void RpcSyncMovement(Vector3 position, byte keys) {
         // string bitString = Convert.ToString(keys, 2);
@@ -344,6 +352,12 @@ public class Player : NetworkBehaviour {
         // Debug.Log("MOVE " + name + " => " + bitString);
         if (isLocalPlayer)
             return;
+        transform.position = position;
+        _syncMovementKeys = keys;
+    }
+
+    [TargetRpc]
+    private void TargetSyncMovement(NetworkConnection conn, Vector3 position, byte keys) {
         transform.position = position;
         _syncMovementKeys = keys;
     }
@@ -404,7 +418,7 @@ public class Player : NetworkBehaviour {
     }
 
     [Command]
-    public void CmdTaskFinish(TaskPayload payload) {
+    public void CmdTaskFinish(CustomPayload payload) {
         if (CurrentTask == null)
             return;
         if (IsHunter && !CurrentTask.HunterActive || !IsHunter && !CurrentTask.VictimActive)
@@ -433,7 +447,7 @@ public class Player : NetworkBehaviour {
     }
 
     [Command]
-    public void CmdTaskStep(TaskPayload payload) {
+    public void CmdTaskStep(CustomPayload payload) {
         if (CurrentTask == null)
             return;
         if (CurrentTask.SetCooldownOnStep)
@@ -445,10 +459,10 @@ public class Player : NetworkBehaviour {
     }
 
     [TargetRpc]
-    public void TargetTaskResponse(NetworkConnection conn, TaskPayload payload) {
+    public void TargetTaskResponse(NetworkConnection conn, CustomPayload payload) {
         if (CurrentTask == null)
             return;
-        CurrentTask.OnTaskResponse(payload.Data);
+        CurrentTask.OnTaskResponseClient(payload.Data);
     }
 
     [TargetRpc]
@@ -511,7 +525,7 @@ public class Player : NetworkBehaviour {
     }
 
     private void SynchronizeTaskListInternal(NetworkConnection conn) {
-        TargetSynchronizeTaskList(conn, TaskList.Select(task => task.gameObject).ToArray());
+        TargetSynchronizeTaskList(conn, new CustomPayload(TaskList.Select(task => (object) task.gameObject).ToArray()));
     }
 
     [Command]
@@ -520,9 +534,16 @@ public class Player : NetworkBehaviour {
     }
 
     [TargetRpc]
-    private void TargetSynchronizeTaskList(NetworkConnection conn, GameObject[] tasks) {
+    private void TargetSynchronizeTaskList(NetworkConnection conn, CustomPayload tasks) {
+        if (TaskList == null)
+            TaskList = new List<GameLocalTask>();
+        Debug.Log("TASK SYNCHRONIZE");
+        foreach (object o in tasks.Data) {
+            Debug.Log(o);
+        }
+
         TaskList.Clear();
-        TaskList.AddRange(tasks.Select(o => o.GetComponent<GameLocalTask>()));
+        TaskList.AddRange(tasks.Data.Where(o => o != null).Select(o => ((GameObject) o).GetComponent<GameLocalTask>()));
         TaskList.ForEach(task => task.ForceNotify());
     }
 
@@ -552,7 +573,7 @@ public class Player : NetworkBehaviour {
             GUI.contentColor = Color.white;
             float width = GUI.skin.label.CalcSize(new GUIContent(Name)).x;
             GUI.DrawTexture(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 16f), _nameGradient);
-            GUI.contentColor = IsHunter ? Color.red : Color.white;
+            GUI.contentColor = IsHunter ? (Color) new Color32(255, 128, 128, 255) : Color.white;
             GUI.Label(new Rect(pos.x - width / 2f, Screen.height - pos.y - 8f, width, 20f), Name);
             GUI.contentColor = Color.white;
         }
@@ -585,15 +606,6 @@ public class Player : NetworkBehaviour {
                 GUI.skin.button.normal.background = GameAssets.DefaultUnityNormalBackground;
                 GUI.skin.button.hover.background = GameAssets.DefaultUnityHoverBackground;
                 GUI.skin.button.active.background = GameAssets.DefaultUnityActiveBackground;
-            }
-
-            if (GameManager.Instance.GameStarted) {
-                GUI.skin.label.fontSize = 36;
-                GUI.contentColor = Color.white;
-                string time = Utils.TimeToString(GameManager.Instance.TimeLimit - ((float) NetworkTime.time - GameManager.Instance.StatusStartTime));
-                Vector2 size = GUI.skin.label.CalcSize(new GUIContent(time));
-                GUI.Label(new Rect(Screen.width / 2f - size.x / 2f, Screen.height - size.y, size.x, size.y), time);
-                GUI.skin.label.fontSize = GUI.skin.font.fontSize;
             }
 
             if (CurrentTask != null)

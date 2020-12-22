@@ -104,10 +104,11 @@ GameObject:
   - component: {fileID: 6688884286849346526}
   - component: {fileID: 5570933256479189898}
   - component: {fileID: 6688884286849346514}
+  - component: {fileID: 4404656305133142961}
   m_Layer: 31
   m_Name: LocalTaskNumbers
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2974397684917235467, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -182,10 +183,23 @@ MonoBehaviour:
   LastVictimOpened: 0
   LastHunterOpened: 0
   SelfActive: 0
-  Damage: 0
+  Damage: 10
   Type: 0
   Amount: 6
   Numbers: 
+--- !u!114 &4404656305133142961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6688884286849346515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1da3d29678ea48d08fa34020f33e37f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Group: 
 --- !u!1 &6688884287016468592
 GameObject:
   m_ObjectHideFlags: 0

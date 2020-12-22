@@ -1,4 +1,5 @@
 using Mirror;
+using UnityEngine;
 
 public struct MessageGameInfo : NetworkMessage {
     public float VictimVision;
@@ -16,7 +17,8 @@ public struct MessageGameInfo : NetworkMessage {
     public int   VictimLongTasks;
     public int   VictimShortTasks;
     public float TimeLimit;
-    public float HunterHealth;
+    public Color DefaultColor;
+    public bool  TasksBalancedDamage;
 }
 
 public static class MessageGameInfoFunctions {
@@ -36,7 +38,8 @@ public static class MessageGameInfoFunctions {
         writer.WriteInt32(value.VictimLongTasks);
         writer.WriteInt32(value.VictimShortTasks);
         writer.WriteSingle(value.TimeLimit);
-        writer.WriteSingle(value.HunterHealth);
+        writer.WriteColor(value.DefaultColor);
+        writer.WriteBoolean(value.TasksBalancedDamage);
     }
 
     public static MessageGameInfo Deserialize(this NetworkReader reader) {
@@ -56,7 +59,8 @@ public static class MessageGameInfoFunctions {
         value.VictimLongTasks = reader.ReadInt32();
         value.VictimShortTasks = reader.ReadInt32();
         value.TimeLimit = reader.ReadSingle();
-        value.HunterHealth = reader.ReadSingle();
+        value.DefaultColor = reader.ReadColor();
+        value.TasksBalancedDamage = reader.ReadBoolean();
         return value;
     }
 }

@@ -96,7 +96,7 @@ GameObject:
   m_Layer: 0
   m_Name: TaskLineDoor
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -161,11 +161,16 @@ MonoBehaviour:
   syncInterval: 0.1
   VictimActive: 0
   HunterActive: 0
+  VictimCooldown: 0
+  HunterCooldown: 0
+  SetCooldownOnStep: 0
   ActiveSync:
   - {fileID: 0}
   ActivatorObject: {fileID: 0}
   Closeable: 1
   UnkillableInTask: 0
+  LastVictimOpened: 0
+  LastHunterOpened: 0
   Buttons: 0
 --- !u!1 &7927395506720361341
 GameObject:
