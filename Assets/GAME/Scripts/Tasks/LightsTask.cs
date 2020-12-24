@@ -50,6 +50,8 @@ public class LightsTask : GameTask {
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
+        // TODO(dm): Refactor.
+        
         GUI.Box(new Rect(Screen.width / 2f - 256f, Screen.height / 2f - 64f, 512f, 128f), "");
         for (int i = 0; i < 8; ++i) {
             int state = ((_buttons >> i) & 0b1) == 1 ? 1 : 0;

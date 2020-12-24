@@ -1,91 +1,120 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using UnityEngine;
 
 public class NumbersLocalTask : GameLocalTask {
     public int Amount;
 
-    [SyncVar]
-    public string Numbers;
+    private List<byte> _numbers;
+    private int        _nextIndex;
+    private bool       _isTutorial;
+    private bool       _error;
 
-    private string _current;
+    private Texture2D _regularBackground;
+    private Texture2D _unTickedBackground;
+    private Texture2D _tickedBackground;
 
     protected override void Start() {
         base.Start();
-        Numbers = "";
+        _regularBackground = AssetLoader.GetColor(200, 200, 200);
+        _unTickedBackground = AssetLoader.GetColor(200, 64, 64);
+        _tickedBackground = AssetLoader.GetColor(64, 200, 64);
     }
 
     public override bool OnTaskOpen(Player player) {
         if (!base.OnTaskOpen(player))
             return false;
 
-        // Numbers = "";
+        // int numbers = 0;
         // for (int i = 0; i < Amount; ++i) {
-        //     Numbers += Random.Range(0, 10).ToString();
+        //     int pos;
+        //     do {
+        //         pos = Random.Range(0, 30);
+        //     } while (((numbers >> pos) & 0b1) == 1);
+        //
+        //     numbers |= 1 << pos;
         // }
 
         return true;
     }
 
-    public override bool OnTaskFinish(Player player, params object[] data) {
-        string code = (string) data[0];
-        if (Numbers == "" || code != Numbers) {
-            SendTaskResponse(player, false);
-            return false;
-        }
-
-        return base.OnTaskFinish(player, data);
-    }
-
     public override void OnTaskOpenClient() {
-        if (Numbers == "")
-            _current = "Code hasn't been generated yet. Generate one on generator.";
-        else
-            _current = "";
+        GenerateNumbers();
+        _isTutorial = true;
     }
 
-    public override void OnTaskResponseClient(params object[] data) {
-        base.OnTaskResponseClient(data);
-        if (!(bool) data[0])
-            _current = "";
-    }
-
-    public void GenerateNewNumbers() {
-        Numbers = "";
-        for (int i = 0; i < Amount; ++i) {
-            Numbers += Random.Range(0, 10).ToString();
+    public override void OnTaskUpdateClient() {
+        base.OnTaskUpdateClient();
+        if (_nextIndex >= Amount) {
+            if (_isTutorial) {
+                _isTutorial = false;
+                GenerateNumbers();
+            }
+            else {
+                SendTaskFinish();
+            }
         }
+    }
+
+    private void GenerateNumbers() {
+        if (_numbers == null)
+            _numbers = new List<byte>();
+        _numbers.Clear();
+        for (int i = 0; i < Amount; ++i) {
+            byte pos;
+            do {
+                pos = (byte) Random.Range(0, 30);
+            } while (_numbers.Contains(pos));
+
+            _numbers.Add(pos);
+        }
+
+        _nextIndex = 0;
+        _error = false;
     }
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
-        GUI.Box(new Rect(Screen.width / 2f - 160f, Screen.height / 2f - 240f, 320f, 480f), "");
-        GUI.Box(new Rect(Screen.width / 2f - 144f, Screen.height / 2f - 224f, 288f, 40f), "");
-        // GUI.Label(new Rect(Screen.width / 2f - 136f, Screen.height / 2f - 250f, 272f, 32f), Numbers);
-        GUI.skin.label.alignment = TextAnchor.MiddleLeft;
-        GUI.Label(new Rect(Screen.width / 2f - 136f, Screen.height / 2f - 224f, 272f, 40f), _current);
-        GUI.skin.label.alignment = TextAnchor.UpperLeft;
-        for (int i = 0; i < 9; ++i) {
-            float x = Screen.width  / 2f - 144f + i % 3               * 102f;
-            float y = Screen.height / 2f - 172f + Mathf.Floor(i / 3f) * 102f;
-            if (GUI.Button(new Rect(x, y, 86f, 86f), (i + 1).ToString())) {
-                if (Numbers != "")
-                    _current += (i + 1).ToString();
+
+        GUI.BeginGroup(new Rect(Screen.width / 2f - 306f, Screen.height / 2f - 256f, 612f, 512f));
+
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 6; ++j) {
+                float x = 8f + j * 99f;
+                float y = 8f + i * 99f;
+                int index = i * 6 + j;
+                int num = _numbers.FindIndex(b => b == (byte) index);
+                if (num == -1)
+                    continue;
+                Texture2D tex = _error ? _unTickedBackground : num >= _nextIndex ? _regularBackground : _tickedBackground;
+                Color color = num >= _nextIndex && !_error ? Color.black : Color.white;
+                GUITaskUtils.SetBackground(tex);
+                GUI.contentColor = color;
+                if (GUI.Button(new Rect(x, y, 90f, 90f), _isTutorial || _nextIndex == 0 ? (num + 1).ToString() : "")) {
+                    if (!_error) {
+                        if (_nextIndex == num) {
+                            _nextIndex++;
+                        }
+                        else {
+                            _error = true;
+                            StartCoroutine(ResetError(1.5f));
+                        }
+                    }
+                }
             }
         }
 
-        if (GUI.Button(new Rect(Screen.width / 2f - 144f, Screen.height / 2f + 134f, 86f, 86f), "Clear")) {
-            if (Numbers != "")
-                _current = "";
-        }
+        GUI.contentColor = Color.black;
+        GUITaskUtils.SetBackground(null);
 
-        if (GUI.Button(new Rect(Screen.width / 2f - 42f, Screen.height / 2f + 134f, 86f, 86f), "0")) {
-            if (Numbers != "")
-                _current += "0";
-        }
+        GUI.EndGroup();
+    }
 
-        if (GUI.Button(new Rect(Screen.width / 2f + 60f, Screen.height / 2f + 134f, 86f, 86f), "OK")) {
-            if (Numbers != "")
-                SendTaskFinish(_current);
-        }
+    private IEnumerator ResetError(float time) {
+        yield return new WaitForSeconds(time);
+        _isTutorial = true;
+        GenerateNumbers();
     }
 }

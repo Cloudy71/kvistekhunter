@@ -11,6 +11,7 @@ public class VentTask : GameTask {
 
     private Dictionary<Player, float> _usage;
     private Light                     _trapLight;
+    private float                     _inVentSince;
 
     protected override void Start() {
         base.Start();
@@ -65,6 +66,7 @@ public class VentTask : GameTask {
     }
 
     public override void OnTaskOpenClient() {
+        _inVentSince = Time.time;
     }
 
     public override void OnTaskUpdateClient() {
@@ -74,10 +76,15 @@ public class VentTask : GameTask {
                 SendTaskFinish(Path[i]);
             }
         }
+
+        if (Time.time >= _inVentSince + 5f) {
+            SendTaskClose();
+        }
     }
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
+        // TODO(dm): Refactor.
 
         int i = 1;
         foreach (GameObject pathObject in Path) {

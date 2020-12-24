@@ -19,6 +19,7 @@ public class AdminTableTask : GameTask {
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
+        // TODO(dm): Refactor.
 
         float width = Screen.width;
         float height = Screen.height;

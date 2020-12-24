@@ -74,6 +74,10 @@ public class GameScreenDrawer : MonoBehaviour {
         if (Player.GetLocal == null)
             return;
 
+        GUI.skin.label.alignment = TextAnchor.MiddleRight;
+        GUI.Label(new Rect(Screen.width - 80f, Screen.height - 20f, 72f, 20f), "Ping: " + Mathf.Round((float) NetworkTime.rtt * 1000f));
+        GUI.skin.label.alignment = TextAnchor.UpperLeft;
+
         if (GameManager.Instance.GameStarted) {
             GUI.skin.label.fontSize = 36;
             GUI.contentColor = Color.white;

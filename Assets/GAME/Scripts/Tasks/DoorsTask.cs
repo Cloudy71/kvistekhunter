@@ -85,6 +85,7 @@ public class DoorsTask : GameTask {
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
+        // TODO(dm): Refactor.
 
         GUI.Box(new Rect(Screen.width / 2f - 256f, Screen.height / 2f - 64f, 512f, 128f), "");
         int size = Controlling.Length;

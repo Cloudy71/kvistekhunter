@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8714967696645936417}
   - component: {fileID: 1202542378901629079}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: TrapLight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -49,7 +49,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 0
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -90,6 +90,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!1 &2569307184860537752
@@ -104,7 +105,7 @@ GameObject:
   - component: {fileID: 2569307184860537754}
   - component: {fileID: 2569307184860537756}
   - component: {fileID: 2569307184860537757}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: TaskVent
   m_TagString: Untagged
   m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
@@ -176,6 +177,7 @@ MonoBehaviour:
   HunterCooldown: 30
   SetCooldownOnStep: 0
   ActiveSync: []
+  ActivateOnFinish: []
   ActivatorObject: {fileID: 0}
   Closeable: 1
   UnkillableInTask: 1
@@ -197,7 +199,7 @@ GameObject:
   - component: {fileID: 2569307185177644844}
   - component: {fileID: 2569307185177644833}
   - component: {fileID: 2569307185177644846}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}

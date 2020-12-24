@@ -89,7 +89,8 @@ public class ButtonSequenceLocalTask : GameLocalTask {
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
-
+        // TODO(dm): Refactor.
+        
         bool preview = Time.time >= _timeOpened && Time.time <= _timeOpened + 1f;
         bool error = Time.time < _timeOpened;
 

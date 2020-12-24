@@ -67,7 +67,7 @@ MonoBehaviour:
   GameStarted: 0
   Admin: {fileID: 0}
   VictimVision: 7.5
-  VictimLives: 10
+  VictimLives: 5
   VictimSpeed: 6
   HunterVision: 25
   HunterKillCooldown: 10
@@ -79,7 +79,7 @@ MonoBehaviour:
   HunterVisionOnCooldown: 2
   VictimCommonTasks: 1
   VictimLongTasks: 1
-  VictimShortTasks: 1
+  VictimShortTasks: 2
   TimeLimit: 600
   DefaultColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   TasksBalancedDamage: 0

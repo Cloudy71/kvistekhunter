@@ -49,6 +49,8 @@ public class LineDoorTask : GameTask {
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
+        // TODO(dm): Refactor.
+        
         GUI.Box(new Rect(Screen.width / 2f - 256f, Screen.height / 2f - 256f, 512f, 512f), "");
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 2; ++j) {

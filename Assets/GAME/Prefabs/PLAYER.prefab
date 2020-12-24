@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 631397684472678128}
   - component: {fileID: 760883403}
   - component: {fileID: 1731415385494922543}
+  - component: {fileID: 6552302560377394547}
   m_Layer: 8
   m_Name: PLAYER
   m_TagString: Player
@@ -159,7 +160,10 @@ MonoBehaviour:
   Distance: 0
   Cooldown: 0
   LastAction: 0
+  SeesEveryone: 0
+  Color: {r: 0, g: 0, b: 0, a: 0}
   CurrentTask: {fileID: 0}
+  TaskList: []
 --- !u!114 &1973691732951637510
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -303,6 +307,20 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &6552302560377394547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1973691732951637504}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44fb691748e241878ebb1bd5176295e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  List:
+  - {fileID: 3170130696218558771, guid: dc0a3b94e4ce45f4b9f36b64fa19faf7, type: 3}
 --- !u!1 &1973691733871767018
 GameObject:
   m_ObjectHideFlags: 0

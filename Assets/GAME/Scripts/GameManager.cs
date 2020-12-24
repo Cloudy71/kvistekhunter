@@ -442,6 +442,11 @@ public class GameManager : NetworkManager {
 
                 foreach (GameLocalTask gameLocalTask in p.TaskList) {
                     huntersHealth += gameLocalTask.Damage;
+                    foreach (GameTask gameTask in gameLocalTask.ActivateOnFinish) {
+                        if (gameTask is GameLocalTask gameLocalTask1) {
+                            huntersHealth += gameLocalTask1.Damage;
+                        }
+                    }
                 }
 
                 victimsHealth += p.Lives;
@@ -453,6 +458,10 @@ public class GameManager : NetworkManager {
                 continue;
             p.transform.position = startPosition.position;
             p.RpcSetPosition(p.transform.position);
+        }
+
+        foreach (KeyValuePair<int, NetworkConnectionToClient> player in NetworkServer.connections) {
+            player.Value.identity.RebuildObservers(true);
         }
 
         // StartCoroutine(SendTaskList(1f));

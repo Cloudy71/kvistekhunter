@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 public class GeneratorTask : GameTask {
-    public NumbersLocalTask NumbersTask;
+    public CodeLocalTask codeTask;
 
     private float _timeCodeDisplayed;
 
@@ -20,7 +20,7 @@ public class GeneratorTask : GameTask {
         base.OnTaskStep(player, data);
         int type = (int) data[0];
         if (type == 0) {
-            NumbersTask.GenerateNewNumbers();
+            codeTask.GenerateNewNumbers();
             SendTaskResponse(player, 0);
         }
     }
@@ -39,6 +39,8 @@ public class GeneratorTask : GameTask {
 
     public override void OnTaskGUI() {
         base.OnTaskGUI();
+        // TODO(dm): Refactor.
+        
         GUI.Box(new Rect(Screen.width / 2f - 256f, Screen.height / 2f - 256f, 512f, 512f), "");
 
         #region Numbers code
@@ -50,7 +52,7 @@ public class GeneratorTask : GameTask {
         }
 
         if (Time.time >= _timeCodeDisplayed && Time.time <= _timeCodeDisplayed + 3f) {
-            GUI.Label(new Rect(Screen.width / 2f - 240f, Screen.height / 2f - 200f, 124f, 20f), NumbersTask.Numbers);
+            GUI.Label(new Rect(Screen.width / 2f - 240f, Screen.height / 2f - 200f, 124f, 20f), codeTask.Numbers);
         }
 
         #endregion

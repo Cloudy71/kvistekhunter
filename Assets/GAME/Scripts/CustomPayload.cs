@@ -7,6 +7,15 @@ public class CustomPayload {
     public CustomPayload(params object[] data) {
         Data = data;
     }
+
+    public T Get<T>(int index) {
+        return (T) Data[index];
+    }
+
+    public object this[int i] {
+        get => Data[i];
+        set => Data[i] = value;
+    }
 }
 
 public static class TaskPayloadSerializer {

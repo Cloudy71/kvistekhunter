@@ -11,6 +11,8 @@ public class Player : NetworkBehaviour {
     public static Player Local;
     public static Player HunterPlayer;
 
+    private static readonly int ShaderColorProperty = Shader.PropertyToID("_Color");
+
     public static Player GetLocal => Local == null ? HunterPlayer : Local;
 
     [SyncVar]
@@ -48,6 +50,7 @@ public class Player : NetworkBehaviour {
 
     public GameTask            CurrentTask;
     public List<GameLocalTask> TaskList;
+    public Player              KilledBy;
 
     private Rigidbody    _rigidbody;
     private Light        _light;
@@ -59,6 +62,7 @@ public class Player : NetworkBehaviour {
 
     private Vector3 _oldVelocity;
     private byte    _syncMovementKeys;
+
 
     private void Awake() {
         Vision = 10f;
@@ -231,7 +235,7 @@ public class Player : NetworkBehaviour {
             CmdTaskClose();
         }
 
-        if (CurrentTask != null)
+        if (CurrentTask != null && CurrentTask.IsFirstCome)
             CurrentTask.OnTaskUpdateClient();
     }
 
@@ -285,12 +289,12 @@ public class Player : NetworkBehaviour {
         //     GameManager.Instance.DisplayHunters && IsHunter ? GameAssets.Instance.MaterialPlayerHunter :
         //                                                       GameAssets.Instance.MaterialPlayerOther;
         _model.material = isLocalPlayer ? GameAssets.Instance.MaterialPlayerLocal : GameAssets.Instance.MaterialPlayerOther;
-        _model.material.SetColor("_Color", isLocalPlayer && !IsHunter ? GameManager.Instance.DefaultColor : Color);
+        _model.material.SetColor(ShaderColorProperty, isLocalPlayer && !IsHunter ? GameManager.Instance.DefaultColor : Color);
     }
 
     private void VisibilityColorHook(Color oldColor, Color newColor) {
         VisibilityController();
-        _model.material.SetColor("_Color", isLocalPlayer && !IsHunter ? GameManager.Instance.DefaultColor : newColor);
+        _model.material.SetColor(ShaderColorProperty, isLocalPlayer && !IsHunter ? GameManager.Instance.DefaultColor : newColor);
         Debug.Log("COLOR HOOK = " + newColor);
         // if (!IsHunter)
         //     GameManager.Instance.ReplaceUsedColor(oldColor, newColor);
@@ -385,24 +389,38 @@ public class Player : NetworkBehaviour {
 
         int lives = p.Lives /* - 1*/;
         p.Lives = 0;
+        p.KilledBy = this;
+        GameManager.Instance.SetVictimsHealth(GameManager.Instance.StatusVictimsHealth - 1);
         LastAction = (float) NetworkTime.time;
-        Vector3 force = (target.transform.position - transform.position) * 300f;
-        p.RpcSendForce(force);
-        if (!isLocalPlayer) {
-            p._rigidbody.constraints = RigidbodyConstraints.None;
-            p._rigidbody.AddForce(force, ForceMode.Force);
-        }
+        // Vector3 force = (target.transform.position - transform.position) * 300f;
+        // p.RpcSendForce(force);
+        // if (!isLocalPlayer) {
+        //     p._rigidbody.constraints = RigidbodyConstraints.None;
+        //     p._rigidbody.AddForce(force, ForceMode.Force);
+        // }
 
         if (lives > 0) {
-            p.StartCoroutine(p.waitToRespawn(8f, lives));
+            p.StartCoroutine(p.WaitToRespawn(8f, lives));
         }
 
         RpcSetPosition(p.transform.position);
+        RpcSpawnParticle(ObjectAssetStorage.Index(this, "ParticleBlood"),
+                         p.transform.position + Vector3.up * 2f,
+                         new Vector3(-90f, 0f, 0f));
+        p.RpcPlayAnimation("Death");
+        p._syncMovementKeys = 0;
+        p.RpcSyncMovement(p.transform.position, 0);
     }
 
     [Command]
     private void CmdKill(GameObject target) {
         KillInternal(target);
+    }
+
+    [ClientRpc]
+    private void RpcSpawnParticle(int bundleIndex, Vector3 position, Vector3 euler) {
+        GameObject prefab = ObjectAssetStorage.Get(this, bundleIndex);
+        Instantiate(prefab, position, Quaternion.Euler(euler));
     }
 
     [Command]
@@ -480,11 +498,20 @@ public class Player : NetworkBehaviour {
         task.GetComponent<GameTask>().OnTaskFinishClient();
     }
 
-    [ClientRpc]
-    public void RpcSendForce(Vector3 force) {
-        _rigidbody.constraints = RigidbodyConstraints.None;
-        _rigidbody.AddForce(force, ForceMode.Force);
+    [TargetRpc]
+    public void TargetSetTaskData(NetworkConnection conn, CustomPayload payload) {
+        if (CurrentTask == null)
+            return;
+        if (!(CurrentTask is GameLocalTask gameLocalTask))
+            return;
+        gameLocalTask.SetDataInjection(this, payload);
     }
+
+    // [ClientRpc]
+    // public void RpcSendForce(Vector3 force) {
+    //     _rigidbody.constraints = RigidbodyConstraints.None;
+    //     _rigidbody.AddForce(force, ForceMode.Force);
+    // }
 
     [ClientRpc]
     public void RpcResetRigidbody() {
@@ -504,12 +531,13 @@ public class Player : NetworkBehaviour {
         _animator.Play(animation);
     }
 
-    private IEnumerator waitToRespawn(float time, int lives) {
+    private IEnumerator WaitToRespawn(float time, int lives) {
         yield return new WaitForSeconds(time);
         Lives = lives;
+        KilledBy = null;
         transform.position = GameManager.Instance.GetStartPosition().transform.position;
         RpcSetPosition(transform.position);
-        RpcResetRigidbody();
+        // RpcResetRigidbody();
         RpcPlayAnimation("Idle");
         transform.rotation = Quaternion.identity;
         _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX |

@@ -4,9 +4,13 @@ using Mirror;
 using UnityEngine;
 
 public class PlayerProximityChecker : NetworkProximityChecker {
+    private Player _self;
+
     public override bool OnCheckObserver(NetworkConnection conn) {
         Player p;
-        if (!GameManager.Instance.GameStarted || (p = conn.identity.GetComponent<Player>()).Lives == 0 || p.SeesEveryone)
+        if (_self == null)
+            _self = GetComponent<Player>();
+        if (!GameManager.Instance.GameStarted || (p = conn.identity.GetComponent<Player>()).Lives == 0 || p.SeesEveryone || _self.KilledBy == p)
             return true;
         if (forceHidden)
             return false;

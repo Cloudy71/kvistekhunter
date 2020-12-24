@@ -12,7 +12,9 @@ public abstract class GameTask : NetworkBehaviour {
     public float HunterCooldown;
     public bool  SetCooldownOnStep;
 
-    public GameObject[] ActiveSync;
+    public GameTask[] ActiveSync;
+
+    public GameTask[] ActivateOnFinish;
 
     public GameObstacle ActivatorObject;
 
@@ -30,6 +32,8 @@ public abstract class GameTask : NetworkBehaviour {
     private bool _firstCome;
     private bool _oldVictimActive;
     private bool _oldHunterActive;
+
+    public bool IsFirstCome => !_firstCome;
 
     protected virtual void Awake() {
         light = transform.Find("TaskLight")?.GetComponent<Light>();
@@ -60,8 +64,8 @@ public abstract class GameTask : NetworkBehaviour {
 
     protected virtual void OnVictimActiveChange() {
         if (isServer) {
-            foreach (GameObject task in ActiveSync) {
-                task.GetComponent<GameTask>().VictimActive = VictimActive;
+            foreach (GameTask task in ActiveSync) {
+                task.VictimActive = VictimActive;
             }
         }
 
@@ -73,8 +77,8 @@ public abstract class GameTask : NetworkBehaviour {
 
     protected virtual void OnHunterActiveChange() {
         if (isServer) {
-            foreach (GameObject task in ActiveSync) {
-                task.GetComponent<GameTask>().HunterActive = HunterActive;
+            foreach (GameTask task in ActiveSync) {
+                task.HunterActive = HunterActive;
             }
         }
 
@@ -124,6 +128,11 @@ public abstract class GameTask : NetworkBehaviour {
 
     public void SendTaskFinish(params object[] data) {
         Player.Local.CmdTaskFinish(new CustomPayload(data));
+    }
+
+    public void SendTaskClose() {
+        OnTaskCloseClient();
+        Player.Local.CmdTaskClose();
     }
 
     public void SendTaskResponse(Player player, params object[] data) {
