@@ -2,6 +2,7 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
 
+// Author: Háně
 public class ButtonSequenceLocalTask : GameLocalTask {
     public int Buttons;
 

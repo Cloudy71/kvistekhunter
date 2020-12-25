@@ -3,9 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using NUnit.Framework.Internal;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+// Author: Cloudy
 public class DownloadLocalTask : GameLocalTask {
     [Serializable]
     public class Entry {
@@ -15,7 +17,9 @@ public class DownloadLocalTask : GameLocalTask {
         public List<Entry> Entries;
 
         public override string ToString() {
-            return JsonUtility.ToJson(this);
+            return Utils.StringCompress(JsonUtility.ToJson(this),
+                                        GetCompressArray()
+                                       );
         }
 
         public override bool Equals(object obj) {
@@ -37,6 +41,24 @@ public class DownloadLocalTask : GameLocalTask {
         public static bool operator !=(Entry entry1, Entry entry2) {
             return !Equals(entry1, entry2);
         }
+
+        private static string[] GetCompressArray() {
+            List<string> repl = new List<string>(new[] {
+                                                           "\"\\IsFile\\\":",
+                                                           "\"\\Name\\\":",
+                                                           "\"\\Size\\\":",
+                                                           "\"\\Entries\\\":",
+                                                           ":\\false\\,",
+                                                           ":\\true\\,"
+                                                       });
+            repl.AddRange(_folderNames.Select(s => "\"\\" + s + "\\\""));
+            repl.AddRange(_fileNames.Select(s => "\"\\" + s + "\\\""));
+            return repl.ToArray();
+        }
+
+        public static Entry GetFromString(string str) {
+            return JsonUtility.FromJson<Entry>(Utils.StringDecompress(str, GetCompressArray()));
+        }
     }
 
     [SyncVar]
@@ -46,8 +68,8 @@ public class DownloadLocalTask : GameLocalTask {
 
     public Entry Target;
 
-    private string[] _folderNames;
-    private string[] _fileNames;
+    private static string[] _folderNames;
+    private static string[] _fileNames;
 
     private Coroutine _currentCoroutine;
 
@@ -62,17 +84,19 @@ public class DownloadLocalTask : GameLocalTask {
 
     protected override void Start() {
         base.Start();
-        _folderNames = new[] {
-                                 "DATA", "SYSTEM", "WEBSERVER", "DATASERVER", "LOGINSERVER", "METIN2",
-                                 "KVISTEK", "LOL", "FORHONOR", "COMPANY", "DATA2", "SYNOLOGY", "APACHE", "MYSQL",
-                                 "POSTGRES", "ORACLE", "SQL", "MSSQL", "NOSQL", "DRWHO", "COLORS", "STATUS", "GAME",
-                                 "UINT32", "_HIDDEN"
-                             };
-        _fileNames = new[] {
-                               "A.BIN", "B.BIN", "C.BIN", "D.BIN", "E.BIN", "F.BIN",
-                               "Q.BIN", "U.BIN", "V.BIN", "W.BIN", "X.BIN", "Y.BIN", "Z.BIN",
-                               "DB.DUMP", "IMPORT.SQL", "._", ".GITIGNORE", ".GIT"
-                           };
+        if (_folderNames == null)
+            _folderNames = new[] {
+                                     "DATA", "SYSTEM", "WEBSERVER", "DATASERVER", "LOGINSERVER", "METIN2",
+                                     "KVISTEK", "LOL", "FORHONOR", "COMPANY", "DATA2", "SYNOLOGY", "APACHE", "MYSQL",
+                                     "POSTGRES", "ORACLE", "SQL", "MSSQL", "NOSQL", "DRWHO", "COLORS", "STATUS", "GAME",
+                                     "UINT32", "_HIDDEN"
+                                 };
+        if (_fileNames == null)
+            _fileNames = new[] {
+                                   "A.BIN", "B.BIN", "C.BIN", "D.BIN", "E.BIN", "F.BIN",
+                                   "Q.BIN", "U.BIN", "V.BIN", "W.BIN", "X.BIN", "Y.BIN", "Z.BIN",
+                                   "DB.DUMP", "IMPORT.SQL", "._", ".GITIGNORE", ".GIT"
+                               };
     }
 
     public override bool OnTaskOpen(Player player) {
@@ -99,14 +123,14 @@ public class DownloadLocalTask : GameLocalTask {
 
     private IEnumerator SendTarget(Player player, string fileSystem, string target, float time) {
         yield return new WaitForSeconds(time);
-        SendTaskResponse(player, 0, fileSystem, target);
+        SendTaskResponse(player, 0, Utils.Compress(fileSystem), Utils.Compress(target));
         _currentCoroutine = null;
     }
 
     private Entry GenerateEntry(string entryName, int fmin, int fmax, int ffmin, int ffmax) {
         Entry entry = new Entry {
                                     Name = entryName,
-                                    Size = Random.Range(1, 100000),
+                                    Size = Random.Range(1, 100),
                                     IsFile = false,
                                     Entries = new List<Entry>()
                                 };
@@ -145,7 +169,7 @@ public class DownloadLocalTask : GameLocalTask {
         base.OnTaskStep(player, data);
         int id = (int) data[0];
         if (id == 1) {
-            Entry target = JsonUtility.FromJson<Entry>((string) data[1]);
+            Entry target = Entry.GetFromString((string) data[1]);
             if (target.Name == Target.Name && target.Size == Target.Size) {
                 SendTaskResponse(player, 2);
             }
@@ -168,8 +192,8 @@ public class DownloadLocalTask : GameLocalTask {
         int id = (int) data[0];
 
         if (id == 0) {
-            _main = JsonUtility.FromJson<Entry>((string) data[1]);
-            _target = JsonUtility.FromJson<Entry>((string) data[2]);
+            _main = Entry.GetFromString(Utils.Decompress((byte[]) data[1]));
+            _target = Entry.GetFromString(Utils.Decompress((byte[]) data[2]));
             _current = _main;
         }
         else if (id == 2) {

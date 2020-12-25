@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Author: Cloudy
 public class UploadLocalTask : GameLocalTask {
     public Dictionary<Player, DownloadLocalTask.Entry> Entries;
 
@@ -41,7 +42,7 @@ public class UploadLocalTask : GameLocalTask {
         base.OnTaskResponseClient(data);
         int id = (int) data[0];
         if (id == 0) {
-            _entry = JsonUtility.FromJson<DownloadLocalTask.Entry>((string) data[1]);
+            _entry = DownloadLocalTask.Entry.GetFromString((string) data[1]);
             _step = 0;
             _speed = 0;
             _lastStep = Time.time;

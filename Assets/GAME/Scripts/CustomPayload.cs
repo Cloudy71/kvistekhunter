@@ -25,6 +25,7 @@ public static class TaskPayloadSerializer {
         else if (obj is bool) return 2;
         else if (obj is GameObject) return 3;
         else if (obj is string) return 4;
+        else if (obj is byte[]) return 5;
         return 255;
     }
 
@@ -34,6 +35,10 @@ public static class TaskPayloadSerializer {
         else if (typeByte == 2) writer.WriteBoolean((bool) obj);
         else if (typeByte == 3) writer.WriteGameObject((GameObject) obj);
         else if (typeByte == 4) writer.WriteString((string) obj);
+        else if (typeByte == 5) {
+            writer.WriteInt32(((byte[]) obj).Length);
+            writer.WriteBytes((byte[]) obj, 0, ((byte[]) obj).Length);
+        }
     }
 
     private static object ReadObject(NetworkReader reader, byte typeByte) {
@@ -42,6 +47,11 @@ public static class TaskPayloadSerializer {
         if (typeByte == 2) return reader.ReadBoolean();
         if (typeByte == 3) return reader.ReadGameObject();
         if (typeByte == 4) return reader.ReadString();
+        if (typeByte == 5) {
+            int len = reader.ReadInt32();
+            return reader.ReadBytes(len);
+        }
+
         return null;
     }
 

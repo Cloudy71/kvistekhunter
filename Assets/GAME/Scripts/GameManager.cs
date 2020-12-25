@@ -461,7 +461,7 @@ public class GameManager : NetworkManager {
         }
 
         foreach (KeyValuePair<int, NetworkConnectionToClient> player in NetworkServer.connections) {
-            player.Value.identity.RebuildObservers(true);
+            player.Value.identity.RebuildObservers(false);
         }
 
         // StartCoroutine(SendTaskList(1f));
@@ -474,6 +474,7 @@ public class GameManager : NetworkManager {
 
     public override void OnClientSceneChanged(NetworkConnection conn) {
         base.OnClientSceneChanged(conn);
+        Debug.Log("CL CHANGE");
         conn.identity.GetComponent<Player>().SynchronizeTaskList();
     }
 
