@@ -19,7 +19,7 @@ public class DownloadLocalTask : GameLocalTask {
         public override string ToString() {
             return Utils.StringCompress(JsonUtility.ToJson(this),
                                         GetCompressArray()
-                                       );
+            );
         }
 
         public override bool Equals(object obj) {
@@ -103,8 +103,6 @@ public class DownloadLocalTask : GameLocalTask {
         if (!base.OnTaskOpen(player))
             return false;
 
-        // TODO: Send by parts, MTU is 1200 bytes, which is too much.
-
         if (_currentCoroutine != null) {
             StopCoroutine(_currentCoroutine);
             _currentCoroutine = null;
@@ -116,14 +114,14 @@ public class DownloadLocalTask : GameLocalTask {
         List<Entry> fileEntries = new List<Entry>();
         Traverse(fileEntries, Main);
         Target = fileEntries[Random.Range(0, fileEntries.Count)];
-        _currentCoroutine = StartCoroutine(SendTarget(player, Main.ToString(), Target.ToString(), 2f));
+        _currentCoroutine = StartCoroutine(SendTarget(player, IpAddress, Main.ToString(), Target.ToString(), 2f));
 
         return true;
     }
 
-    private IEnumerator SendTarget(Player player, string fileSystem, string target, float time) {
+    private IEnumerator SendTarget(Player player, string ipAddress, string fileSystem, string target, float time) {
         yield return new WaitForSeconds(time);
-        SendTaskResponse(player, 0, Utils.Compress(fileSystem), Utils.Compress(target));
+        SendTaskResponse(player, 0, ipAddress, Utils.Compress(fileSystem), Utils.Compress(target));
         _currentCoroutine = null;
     }
 
@@ -160,7 +158,7 @@ public class DownloadLocalTask : GameLocalTask {
 
     private void Traverse(List<Entry> returnList, Entry select) {
         returnList.AddRange(select.Entries.Where(entry => entry.IsFile));
-        foreach (Entry entry1 in @select.Entries.Where(entry => !entry.IsFile)) {
+        foreach (Entry entry1 in select.Entries.Where(entry => !entry.IsFile)) {
             Traverse(returnList, entry1);
         }
     }
@@ -192,8 +190,9 @@ public class DownloadLocalTask : GameLocalTask {
         int id = (int) data[0];
 
         if (id == 0) {
-            _main = Entry.GetFromString(Utils.Decompress((byte[]) data[1]));
-            _target = Entry.GetFromString(Utils.Decompress((byte[]) data[2]));
+            _ipAddress = (string) data[1];
+            _main = Entry.GetFromString(Utils.Decompress((byte[]) data[2]));
+            _target = Entry.GetFromString(Utils.Decompress((byte[]) data[3]));
             _current = _main;
         }
         else if (id == 2) {
@@ -204,7 +203,7 @@ public class DownloadLocalTask : GameLocalTask {
     }
 
     public override void OnTaskOpenClient() {
-        _ipAddress = IpAddress;
+        _ipAddress = null;
         _main = null;
         _target = null;
         _isDownloading = false;
@@ -293,7 +292,7 @@ public class DownloadLocalTask : GameLocalTask {
                 }
             }
         }
-        else {
+        else if (_ipAddress != null) {
             GUI.contentColor = new Color32(255, 128, 128, 255);
             GUI.skin.label.alignment = TextAnchor.MiddleCenter;
             GUI.Label(new Rect(8f, 290f, 1008f, 20f), "Connection has been lost. Please retry.");

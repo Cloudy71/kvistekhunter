@@ -221,11 +221,10 @@ public class Player : NetworkBehaviour {
 
         _rigidbody.velocity = velocity;
 
-        if (Input.GetKeyDown(KeyCode.Space) && CurrentTask == null) {
+        if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E)) && CurrentTask == null) {
             GameTask task =
                 PhysicsUtils
-                    .GetNearestObjectHit<GameTask
-                    >(Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance), transform);
+                    .GetNearestObjectHit<GameTask>(Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance), transform);
             if (task != null && (task.HunterActive && IsHunter || task.VictimActive && !IsHunter))
                 CmdTaskOpen(task.gameObject);
         }
@@ -306,8 +305,11 @@ public class Player : NetworkBehaviour {
 
         if (NetworkTime.time >= LastAction + Cooldown) {
             RaycastHit[] hits = Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance / 2f);
-            Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits, transform);
-            if (!(nearest is null)) {
+            Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits.Where(hit => {
+                                                                                Player p;
+                                                                                return (p = hit.transform.GetComponent<Player>()) != null && !p.IsHunter;
+                                                                            }).ToArray(), transform);
+            if (nearest != null) {
                 RaycastHit[] hits1 = Physics.RaycastAll(transform.position + new Vector3(0f, 1f, 0f),
                                                         (nearest.position + new Vector3(0f, 1f, 0f)) -
                                                         (transform.position + new Vector3(0f, 1f, 0f)),
@@ -372,13 +374,16 @@ public class Player : NetworkBehaviour {
     }
 
     private void KillInternal(GameObject target) {
-        if (GameStatus.Instance.LightsOff || NetworkTime.time < LastAction + Cooldown || Vector3.Distance(transform.position, target.transform.position) > Distance)
+        Player p;
+        if (GameStatus.Instance.LightsOff ||
+            NetworkTime.time < LastAction + Cooldown ||
+            Vector3.Distance(transform.position, target.transform.position) > Distance ||
+            (p = target.GetComponent<Player>()).IsHunter)
             return;
         // RaycastHit[] hits = Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance);
         // Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits, transform);
         // if (nearest == null || nearest.gameObject != target)
         //     return;
-        Player p = target.GetComponent<Player>();
         if (p.CurrentTask != null && p.CurrentTask.UnkillableInTask)
             return;
         if (p.CurrentTask != null) {

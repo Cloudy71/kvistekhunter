@@ -37,7 +37,8 @@ public class GameManager : NetworkManager {
 
     public Color[] PreCreatedColors = {
                                           Color.red, Color.green, Color.blue, Color.yellow, Color.cyan, Color.white,
-                                          new Color32(255, 128, 255, 255), (Color) new Color32(160, 0, 192, 255)
+                                          new Color32(255, 128, 255, 255), new Color32(160, 0, 192, 255),
+                                          new Color32(160, 82, 45, 255), new Color32(0, 150, 0, 255)
                                       };
 
     [HideInInspector]
@@ -214,12 +215,15 @@ public class GameManager : NetworkManager {
     public void UIChangeGameInfo() {
         if (IsAdmin) {
             float.TryParse(_panelGameInfo.Find("VictimVision").GetComponent<InputField>().text.Replace(",", "."), out VictimVision);
-            VictimLives = _panelGameInfo.Find("VictimLives").GetComponent<Dropdown>().value + 1;
+            int.TryParse(_panelGameInfo.Find("VictimLives").GetComponent<InputField>().text, out VictimLives);
             float.TryParse(_panelGameInfo.Find("VictimSpeed").GetComponent<InputField>().text.Replace(",", "."), out VictimSpeed);
             float.TryParse(_panelGameInfo.Find("HunterVision").GetComponent<InputField>().text.Replace(",", "."), out HunterVision);
             float.TryParse(_panelGameInfo.Find("HunterKillCooldown").GetComponent<InputField>().text.Replace(",", "."), out HunterKillCooldown);
             float.TryParse(_panelGameInfo.Find("HunterSpeed").GetComponent<InputField>().text.Replace(",", "."), out HunterSpeed);
-            int.TryParse(_panelGameInfo.Find("Hunters").GetComponent<InputField>().text.Replace(",", "."), out Hunters);
+            int.TryParse(_panelGameInfo.Find("Hunters").GetComponent<InputField>().text, out Hunters);
+            int.TryParse(_panelGameInfo.Find("TasksCommon").GetComponent<InputField>().text, out VictimCommonTasks);
+            int.TryParse(_panelGameInfo.Find("TasksLong").GetComponent<InputField>().text, out VictimLongTasks);
+            int.TryParse(_panelGameInfo.Find("TasksShort").GetComponent<InputField>().text, out VictimShortTasks);
             ResendGameInfoData();
         }
 
@@ -251,22 +255,28 @@ public class GameManager : NetworkManager {
     public void RefreshGameInfo() {
         bool admin = IsAdmin;
         _panelGameInfo.Find("VictimVision").GetComponent<InputField>().interactable = admin;
-        _panelGameInfo.Find("VictimLives").GetComponent<Dropdown>().interactable = admin;
+        _panelGameInfo.Find("VictimLives").GetComponent<InputField>().interactable = admin;
         _panelGameInfo.Find("VictimSpeed").GetComponent<InputField>().interactable = admin;
         _panelGameInfo.Find("HunterVision").GetComponent<InputField>().interactable = admin;
         _panelGameInfo.Find("HunterKillCooldown").GetComponent<InputField>().interactable = admin;
         _panelGameInfo.Find("HunterSpeed").GetComponent<InputField>().interactable = admin;
         _panelGameInfo.Find("Hunters").GetComponent<InputField>().interactable = admin;
+        _panelGameInfo.Find("TasksCommon").GetComponent<InputField>().interactable = admin;
+        _panelGameInfo.Find("TasksLong").GetComponent<InputField>().interactable = admin;
+        _panelGameInfo.Find("TasksShort").GetComponent<InputField>().interactable = admin;
         // _panelGameInfo.Find("ButtonChange").GetComponent<Button>().interactable = IsAdmin;
         _startButton.gameObject.SetActive(admin);
 
         _panelGameInfo.Find("VictimVision").GetComponent<InputField>().text = VictimVision.ToString(CultureInfo.InvariantCulture);
-        _panelGameInfo.Find("VictimLives").GetComponent<Dropdown>().value = VictimLives - 1;
+        _panelGameInfo.Find("VictimLives").GetComponent<InputField>().text = VictimLives.ToString(CultureInfo.InvariantCulture);
         _panelGameInfo.Find("VictimSpeed").GetComponent<InputField>().text = VictimSpeed.ToString(CultureInfo.InvariantCulture);
         _panelGameInfo.Find("HunterVision").GetComponent<InputField>().text = HunterVision.ToString(CultureInfo.InvariantCulture);
         _panelGameInfo.Find("HunterKillCooldown").GetComponent<InputField>().text = HunterKillCooldown.ToString(CultureInfo.InvariantCulture);
         _panelGameInfo.Find("HunterSpeed").GetComponent<InputField>().text = HunterSpeed.ToString(CultureInfo.InvariantCulture);
         _panelGameInfo.Find("Hunters").GetComponent<InputField>().text = Hunters.ToString();
+        _panelGameInfo.Find("TasksCommon").GetComponent<InputField>().text = VictimCommonTasks.ToString();
+        _panelGameInfo.Find("TasksLong").GetComponent<InputField>().text = VictimLongTasks.ToString();
+        _panelGameInfo.Find("TasksShort").GetComponent<InputField>().text = VictimShortTasks.ToString();
     }
 
     private void UpdateGameInfoData(MessageGameInfo msg) {
@@ -350,10 +360,11 @@ public class GameManager : NetworkManager {
             connectionIds.Add(connectionsKey);
         }
 
-        Debug.Log("HUNTERS = " + Hunters);
-        int[] hunters = new int[Hunters];
-        for (int i = 0; i < Hunters; ++i) {
-            hunters[i] = -1;
+        int huntersCount = connectionIds.Count >= Hunters ? Hunters : connectionIds.Count;
+        Debug.Log("HUNTERS = " + huntersCount);
+        int[] hunters = new int[huntersCount];
+        for (int i = 0; i < huntersCount; ++i) {
+            hunters[i] = -100;
             int id = Random.Range(0, connectionIds.Count);
             if (hunters.Contains(id)) {
                 i--;
@@ -374,14 +385,14 @@ public class GameManager : NetworkManager {
                 p.IsHunter = true;
                 Player.HunterPlayer = p;
             }
-            // foreach (int hunter in hunters) {
-            //     if (player.Key == connectionIds[hunter]) {
-            //         if (p.Name == "HUNTER")
-            //             p.IsHunter = true;
-            //         if (Player.HunterPlayer == null)
-            //             Player.HunterPlayer = p;
-            //     }
-            // }
+
+            foreach (int hunter in hunters) {
+                if (player.Key == connectionIds[hunter]) {
+                    p.IsHunter = true;
+                    if (Player.HunterPlayer == null)
+                        Player.HunterPlayer = p;
+                }
+            }
 
             int colorIndex = Random.Range(0, availableColors.Count);
             p.SetColor(availableColors[colorIndex]);
@@ -414,6 +425,7 @@ public class GameManager : NetworkManager {
 
         int huntersHealth = 0;
         int victimsHealth = 0;
+        int huntersCount = 0;
         foreach (KeyValuePair<int, NetworkConnectionToClient> player in NetworkServer.connections) {
             Player p = player.Value.identity.GetComponent<Player>();
             Transform startPosition = GetStartPosition();
@@ -421,7 +433,7 @@ public class GameManager : NetworkManager {
             if (!p.IsHunter) {
                 foreach (GameLocalTask.LocalTaskType taskType in typedTasks.Keys) {
                     if (taskType == GameLocalTask.LocalTaskType.Common) {
-                        Debug.Log("COMMON => " + selectedCommonTasks.Count);
+                        // Debug.Log("COMMON => " + selectedCommonTasks.Count);
                         foreach (GameLocalTask selectedCommonTask in selectedCommonTasks) {
                             p.TaskList.Add(selectedCommonTask);
                         }
@@ -432,7 +444,7 @@ public class GameManager : NetworkManager {
                     List<GameLocalTask> availableTasks = new List<GameLocalTask>(typedTasks[taskType]);
                     int req = taskType == GameLocalTask.LocalTaskType.Long ? VictimLongTasks : VictimShortTasks;
                     total = availableTasks.Count;
-                    Debug.Log(taskType + " => " + total);
+                    // Debug.Log(taskType + " => " + total);
                     for (int i = 0; i < (req <= total ? req : total); ++i) {
                         int taskIndex = Random.Range(0, availableTasks.Count);
                         p.TaskList.Add(availableTasks[taskIndex]);
@@ -453,6 +465,9 @@ public class GameManager : NetworkManager {
 
                 p.SynchronizeTaskList();
             }
+            else {
+                huntersCount++;
+            }
 
             if (startPosition == null)
                 continue;
@@ -466,6 +481,7 @@ public class GameManager : NetworkManager {
 
         // StartCoroutine(SendTaskList(1f));
 
+        huntersHealth *= huntersCount;
         StatusHuntersMaxHealth = huntersHealth;
         SetHuntersHealth(huntersHealth, true);
         StatusVictimsMaxHealth = victimsHealth;

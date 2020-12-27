@@ -6345,6 +6345,10 @@ PrefabInstance:
       propertyPath: sceneId
       value: 3770005405
       objectReference: {fileID: 0}
+    - target: {fileID: 764849166852251633, guid: fe9652671b71800448f01643e2732612, type: 3}
+      propertyPath: m_AssetId
+      value: fe9652671b71800448f01643e2732612
+      objectReference: {fileID: 0}
     - target: {fileID: 764849166852251644, guid: fe9652671b71800448f01643e2732612, type: 3}
       propertyPath: m_Name
       value: LocalTaskButtonSequence
@@ -6408,7 +6412,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5234575129848450276, guid: ee6610cf9a464ca42b6cdee4c41633b8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 8
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 5234575129848450276, guid: ee6610cf9a464ca42b6cdee4c41633b8, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6416,7 +6420,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5234575129848450276, guid: ee6610cf9a464ca42b6cdee4c41633b8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 5234575129848450276, guid: ee6610cf9a464ca42b6cdee4c41633b8, type: 3}
       propertyPath: m_LocalRotation.w
