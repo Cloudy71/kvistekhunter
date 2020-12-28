@@ -127,10 +127,10 @@ public class Player : NetworkBehaviour {
     void Update() {
         if (isServer) {
             Vision = IsHunter
-                         ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
-                               ? GameManager.Instance.HunterVisionOnCooldown
-                               : GameManager.Instance.HunterVision
-                         : GameManager.Instance.VictimVision;
+                ? LastAction + Cooldown - NetworkTime.time > 0f || GameStatus.Instance.LightsOff
+                    ? GameManager.Instance.HunterVisionOnCooldown
+                    : GameManager.Instance.HunterVision
+                : GameManager.Instance.VictimVision;
         }
 
         gameObject.layer = IsHunter ? 8 : 9;
@@ -375,6 +375,10 @@ public class Player : NetworkBehaviour {
                 Transform nearest1 = PhysicsUtils.GetNearestHit(hits1, transform);
                 if (nearest1 == nearest) {
                     _lineRenderer.positionCount = 2;
+                    _lineRenderer.startColor = new Color32(255, 155, 155, 255);
+                    _lineRenderer.endColor = new Color32(255, 155, 155, 255);
+                    _lineRenderer.startWidth = .25f;
+                    _lineRenderer.endWidth = .25f;
                     _lineRenderer.SetPositions(new[] {
                                                          transform.position + new Vector3(0f, 1f, 0f),
                                                          nearest.position + new Vector3(0f, 1f, 0f)
@@ -383,13 +387,35 @@ public class Player : NetworkBehaviour {
                     if (Input.GetKeyDown(KeyCode.Q) && !IsFlying) {
                         CmdKill(nearest.gameObject);
                     }
-
-                    return;
+                }
+                else {
+                    _lineRenderer.positionCount = 0;
                 }
             }
+            else {
+                _lineRenderer.positionCount = 0;
+            }
+        }
+        else {
+            _lineRenderer.positionCount = 0;
         }
 
-        _lineRenderer.positionCount = 0;
+        // Check other player vision
+        Collider[] victimColliders = Physics.OverlapSphere(transform.position, GameManager.Instance.HunterVision - 1f, 1 << 9);
+        foreach (Collider victimCollider in victimColliders) {
+            Player p = victimCollider.GetComponent<Player>();
+            if (p == null)
+                continue;
+            LineRenderer line = p.GetComponent<LineRenderer>();
+
+            bool inDistance = Vector3.Distance(transform.position, victimCollider.transform.position) <= p.Vision - 1f;
+            line.startWidth = .01f;
+            line.endWidth = .01f;
+            line.startColor = inDistance ? Color.magenta : Color.green;
+            line.endColor = inDistance ? Color.magenta : Color.green;
+            line.positionCount = 2;
+            line.SetPositions(new[] {transform.position + new Vector3(0f, 1f, 0f), victimCollider.transform.position + new Vector3(0f, 1f, 0f)});
+        }
     }
 
     [Command]
@@ -490,6 +516,15 @@ public class Player : NetworkBehaviour {
                                                                                     TimeOut = .4f
                                                                                 }
                                                             });
+        TargetSendShaderValue(connectionToClient, new[] {
+                                                            new ShaderValue {
+                                                                                ShaderType = GameScreenDrawer.ShaderType.ColorGrading_Filter,
+                                                                                ColorValue = new Color(0f, 1f, 0f, 1f),
+                                                                                TimeFull = .8f,
+                                                                                TimeIn = 0f,
+                                                                                TimeOut = .4f
+                                                                            }
+                                                        });
     }
 
     [Command]

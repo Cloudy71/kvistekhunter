@@ -12,12 +12,23 @@ public class VentTask : GameTask {
     private Dictionary<Player, float> _usage;
     private Light                     _trapLight;
     private float                     _inVentSince;
+    private float                     _trappedSince;
 
     protected override void Start() {
         base.Start();
         _usage = new Dictionary<Player, float>();
         _trapLight = transform.Find("TrapLight").GetComponent<Light>();
         OnTrappedChanged(Trapped, Trapped);
+    }
+
+    protected override void Update() {
+        base.Update();
+        if (!isServer)
+            return;
+
+        if (Trapped && NetworkTime.time >= _trappedSince + 20f) {
+            Trapped = false;
+        }
     }
 
     public override bool OnTaskOpen(Player player) {
@@ -27,6 +38,7 @@ public class VentTask : GameTask {
             if (!SetUsed(player))
                 return false;
             Trapped = true;
+            _trappedSince = (float) NetworkTime.time;
             return false;
         }
 

@@ -50,13 +50,13 @@ public class LineDoorTask : GameTask {
     public override void OnTaskGUI() {
         base.OnTaskGUI();
         // TODO(dm): Refactor.
-        
+
         GUI.Box(new Rect(Screen.width / 2f - 256f, Screen.height / 2f - 256f, 512f, 512f), "");
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 2; ++j) {
                 int pos = i * 2 + j;
-                int state = ((_buttons >> pos) & 0b1) == 1                                  ? 1 :
-                            ((Buttons >> pos) & 0b1) == 1 && ((_buttons >> pos) & 0b1) == 0 ? 2 : 0;
+                int state = ((_buttons >> pos) & 0b1) == 1                          ? 1 :
+                    ((Buttons >> pos) & 0b1) == 1 && ((_buttons >> pos) & 0b1) == 0 ? 2 : 0;
                 Texture2D tex = state == 0 ? _regularBackground : state == 1 ? _tickedBackground : _unTickedBackground;
                 GUITaskUtils.SetBackground(tex);
                 if (GUI.Button(new Rect(Screen.width / 2f - 248f + j * 256f, Screen.height / 2f - 248f + i * 128f, 240f, 112f), "")) {
@@ -75,7 +75,5 @@ public class LineDoorTask : GameTask {
         }
 
         GUITaskUtils.SetBackground(null);
-
-        // GUI.skin.button.normal.background = 
     }
 }

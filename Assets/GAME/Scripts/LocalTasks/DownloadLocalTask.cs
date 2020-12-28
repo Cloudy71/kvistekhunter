@@ -19,7 +19,7 @@ public class DownloadLocalTask : GameLocalTask {
         public override string ToString() {
             return Utils.StringCompress(JsonUtility.ToJson(this),
                                         GetCompressArray()
-            );
+                                       );
         }
 
         public override bool Equals(object obj) {
@@ -145,7 +145,7 @@ public class DownloadLocalTask : GameLocalTask {
         for (int i = 0; i < files; ++i) {
             Entry fileEntry = new Entry {
                                             Name = availableFileNames[Random.Range(0, availableFileNames.Count)],
-                                            Size = Random.Range(1, 1025),
+                                            Size = Random.Range(1, 513),
                                             IsFile = true,
                                             Entries = null
                                         };
@@ -249,47 +249,46 @@ public class DownloadLocalTask : GameLocalTask {
         GUI.BeginGroup(new Rect(Screen.width / 2f - 512f, Screen.height / 2f - 300f, 1024f, 600f));
 
         GUI.Box(new Rect(0f, 0f, 1024f, 600f), "");
+        if (_ipAddress == null) {
+            GUI.contentColor = new Color32(128, 255, 128, 255);
+            GUI.skin.label.alignment = TextAnchor.MiddleCenter;
+            GUI.Label(new Rect(8f, 290f, 1008f, 20f), "Fetching data from server, please wait...");
+            GUI.skin.label.alignment = TextAnchor.UpperLeft;
+            GUI.contentColor = Color.white;
+        }
+
         if (_ipAddress == IpAddress) {
-            if (_main == null) {
+            if (_isDownloading) {
                 GUI.contentColor = new Color32(128, 255, 128, 255);
                 GUI.skin.label.alignment = TextAnchor.MiddleCenter;
-                GUI.Label(new Rect(8f, 290f, 1008f, 20f), "Fetching data from server, please wait...");
+                GUI.Label(new Rect(8f, 290f, 1008f, 40f), "Downloading " + _target.Name + "...\n" + _step + "kB / " + _target.Size + "kB ... " + _speed + "kB/s");
                 GUI.skin.label.alignment = TextAnchor.UpperLeft;
                 GUI.contentColor = Color.white;
             }
             else {
-                if (_isDownloading) {
-                    GUI.contentColor = new Color32(128, 255, 128, 255);
-                    GUI.skin.label.alignment = TextAnchor.MiddleCenter;
-                    GUI.Label(new Rect(8f, 290f, 1008f, 40f), "Downloading " + _target.Name + "...\n" + _step + "kB / " + _target.Size + "kB ... " + _speed + "kB/s");
-                    GUI.skin.label.alignment = TextAnchor.UpperLeft;
-                    GUI.contentColor = Color.white;
+                float y = _current == _main ? 8f : 36f;
+                if (_current != _main) {
+                    if (GUI.Button(new Rect(8f, 8f, 1008f, 20f), "..")) {
+                        _current = GetParent(_main, _current);
+                    }
                 }
-                else {
-                    float y = _current == _main ? 8f : 36f;
-                    if (_current != _main) {
-                        if (GUI.Button(new Rect(8f, 8f, 1008f, 20f), "..")) {
-                            _current = GetParent(_main, _current);
+
+                foreach (Entry currentEntry in _current.Entries) {
+                    if (GUI.Button(new Rect(8f, y, 1008f, 20f), currentEntry.Name + (currentEntry.IsFile ? " [" + currentEntry.Size + "kB]" : ""))) {
+                        if (currentEntry.IsFile) {
+                            if (currentEntry == _target) {
+                                SendTaskStep(1, _target.ToString());
+                            }
+                        }
+                        else {
+                            _current = currentEntry;
                         }
                     }
 
-                    foreach (Entry currentEntry in _current.Entries) {
-                        if (GUI.Button(new Rect(8f, y, 1008f, 20f), currentEntry.Name + (currentEntry.IsFile ? " [" + currentEntry.Size + "kB]" : ""))) {
-                            if (currentEntry.IsFile) {
-                                if (currentEntry == _target) {
-                                    SendTaskStep(1, _target.ToString());
-                                }
-                            }
-                            else {
-                                _current = currentEntry;
-                            }
-                        }
-
-                        y += 28f;
-                    }
-
-                    GUI.Label(new Rect(8f, 572f, 1008f, 20f), "Find: " + _target.Name + " [" + _target.Size + "kB]");
+                    y += 28f;
                 }
+
+                GUI.Label(new Rect(8f, 572f, 1008f, 20f), "Find: " + _target.Name + " [" + _target.Size + "kB]");
             }
         }
         else if (_ipAddress != null) {

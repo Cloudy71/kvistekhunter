@@ -163,6 +163,7 @@ MonoBehaviour:
   SeesEveryone: 0
   Color: {r: 0, g: 0, b: 0, a: 0}
   IsFlying: 0
+  SlowMode: 0
   CurrentTask: {fileID: 0}
   TaskList: []
   KilledBy: {fileID: 0}
@@ -207,10 +208,10 @@ LineRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1973691732951637504}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_MotionVectors: 0
+  m_DynamicOccludee: 0
+  m_MotionVectors: 2
   m_LightProbeUsage: 0
   m_ReflectionProbeUsage: 0
   m_RayTracingMode: 0
@@ -218,7 +219,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 91940efd9e3888043b35f61b9088fe19, type: 2}
+  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -291,7 +292,7 @@ LineRenderer:
     numCapVertices: 0
     alignment: 0
     textureMode: 0
-    shadowBias: 0.5
+    shadowBias: 0
     generateLightingData: 0
   m_UseWorldSpace: 1
   m_Loop: 0
