@@ -455,12 +455,6 @@ public class Player : NetworkBehaviour {
         p.KilledBy = this;
         GameManager.Instance.SetVictimsHealth(GameManager.Instance.StatusVictimsHealth - 1);
         LastAction = (float) NetworkTime.time;
-        // Vector3 force = (target.transform.position - transform.position) * 300f;
-        // p.RpcSendForce(force);
-        // if (!isLocalPlayer) {
-        //     p._rigidbody.constraints = RigidbodyConstraints.None;
-        //     p._rigidbody.AddForce(force, ForceMode.Force);
-        // }
 
         if (lives > 0) {
             p.StartCoroutine(p.WaitToRespawn(8f, lives));
@@ -476,7 +470,7 @@ public class Player : NetworkBehaviour {
         p.TargetSendShaderValue(p.connectionToClient, new[] {
                                                                 new ShaderValue {
                                                                                     ShaderType = GameScreenDrawer.ShaderType.ColorGrading_Filter,
-                                                                                    ColorValue = Color.red,
+                                                                                    ColorValue = new Color(.2f, 0f, 0f, 1f) /*new Color32(238, 127, 27, 255)*/,
                                                                                     TimeFull = .8f,
                                                                                     TimeIn = 0f,
                                                                                     TimeOut = .4f

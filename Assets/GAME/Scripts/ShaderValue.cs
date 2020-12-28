@@ -7,6 +7,4 @@ public struct ShaderValue {
     public float                       TimeFull;
     public float                       TimeIn;
     public float                       TimeOut;
-    
-    
 }
