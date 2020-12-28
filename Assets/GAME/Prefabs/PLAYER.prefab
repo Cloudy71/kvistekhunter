@@ -162,8 +162,10 @@ MonoBehaviour:
   LastAction: 0
   SeesEveryone: 0
   Color: {r: 0, g: 0, b: 0, a: 0}
+  IsFlying: 0
   CurrentTask: {fileID: 0}
   TaskList: []
+  KilledBy: {fileID: 0}
 --- !u!114 &1973691732951637510
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -411,6 +413,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!1 &1973691734645324421

@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 // TODO: CmdKill cannot be called from Server, refactor...
 public class Player : NetworkBehaviour {
@@ -48,6 +49,12 @@ public class Player : NetworkBehaviour {
     [SyncVar(hook = "VisibilityColorHook")]
     public Color Color;
 
+    [SyncVar]
+    public bool IsFlying;
+
+    [SyncVar]
+    public bool SlowMode;
+
     public GameTask            CurrentTask;
     public List<GameLocalTask> TaskList;
     public Player              KilledBy;
@@ -62,7 +69,7 @@ public class Player : NetworkBehaviour {
 
     private Vector3 _oldVelocity;
     private byte    _syncMovementKeys;
-
+    private Vector3 _flyingVelocity;
 
     private void Awake() {
         Vision = 10f;
@@ -109,7 +116,7 @@ public class Player : NetworkBehaviour {
         if (!isServer)
             return;
         Lives = GameManager.Instance.VictimLives;
-        Speed = IsHunter ? GameManager.Instance.HunterSpeed : GameManager.Instance.VictimSpeed;
+        Speed = IsHunter && !SlowMode ? GameManager.Instance.HunterSpeed : GameManager.Instance.VictimSpeed;
         Vision = IsHunter ? GameManager.Instance.HunterVision : GameManager.Instance.VictimVision;
         Distance = IsHunter ? GameManager.Instance.HunterKillDistance : GameManager.Instance.VictimTaskDistance;
         Cooldown = IsHunter ? GameManager.Instance.HunterKillCooldown : 0f;
@@ -129,6 +136,7 @@ public class Player : NetworkBehaviour {
         gameObject.layer = IsHunter ? 8 : 9;
 
         SyncMovement();
+        ServerStatsController();
         // VisibilityController();
         if (!isLocalPlayer) return;
         Movement();
@@ -138,6 +146,16 @@ public class Player : NetworkBehaviour {
     }
 
     private void SyncMovement() {
+        if (Lives == 0)
+            _syncMovementKeys = 0;
+        if (IsFlying) {
+            if (_flyingVelocity != Vector3.zero) {
+                _rigidbody.velocity = _flyingVelocity;
+            }
+
+            return;
+        }
+
         if (isLocalPlayer)
             return;
 
@@ -171,6 +189,14 @@ public class Player : NetworkBehaviour {
         velocity.y = _rigidbody.velocity.y;
 
         _rigidbody.velocity = velocity;
+
+        if (_syncMovementKeys != 0b0)
+            transform.eulerAngles = Utils.GetEulerByKeys(_syncMovementKeys);
+    }
+
+    private void ServerStatsController() {
+        if (!isServer) return;
+        Speed = IsHunter && !SlowMode ? GameManager.Instance.HunterSpeed : GameManager.Instance.VictimSpeed;
     }
 
     private void Movement() {
@@ -180,7 +206,7 @@ public class Player : NetworkBehaviour {
         Vector3 velocity = Vector3.zero;
         byte keys = 0b0000;
 
-        if (CurrentTask == null) {
+        if (CurrentTask == null && !IsFlying) {
             if (Input.GetKey(KeyCode.W)) {
                 velocity += new Vector3(1f, 0f, 0f);
                 keys |= 0b1;
@@ -200,6 +226,9 @@ public class Player : NetworkBehaviour {
                 velocity += new Vector3(0f, 0f, -1f);
                 keys |= 0b1000;
             }
+
+            if (keys != 0b0)
+                transform.eulerAngles = Utils.GetEulerByKeys(keys);
         }
 
         if (velocity != Vector3.zero) {
@@ -211,15 +240,17 @@ public class Player : NetworkBehaviour {
             velocity *= Speed;
         }
 
-        if (keys != _syncMovementKeys || velocity == Vector3.zero && _oldVelocity != velocity) {
-            CmdSyncMovement(transform.position, keys);
+        if (!IsFlying) {
+            if (keys != _syncMovementKeys || velocity == Vector3.zero && _oldVelocity != velocity) {
+                CmdSyncMovement(transform.position, keys);
+            }
+
+            _oldVelocity = velocity;
+
+            velocity.y = _rigidbody.velocity.y;
+
+            _rigidbody.velocity = velocity;
         }
-
-        _oldVelocity = velocity;
-
-        velocity.y = _rigidbody.velocity.y;
-
-        _rigidbody.velocity = velocity;
 
         if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E)) && CurrentTask == null) {
             GameTask task =
@@ -303,6 +334,33 @@ public class Player : NetworkBehaviour {
         if (!IsHunter)
             return;
 
+        if (Input.GetKeyDown(KeyCode.L)) {
+            Vector3 euler = new Vector3(0f, Random.Range(0f, 360f), 0f);
+            SetVelocity(transform.position, Quaternion.Euler(euler) * Vector3.forward * -12f, euler, .8f);
+            RpcPlayAnimation("Flying");
+            GameScreenDrawer.SetShaderValue(new ShaderValue {
+                                                                ShaderType = GameScreenDrawer.ShaderType.ColorGrading_Filter,
+                                                                ColorValue = Color.red,
+                                                                TimeFull = .8f,
+                                                                TimeIn = 0f,
+                                                                TimeOut = .4f
+                                                            });
+            GameScreenDrawer.SetShaderValue(new ShaderValue {
+                                                                ShaderType = GameScreenDrawer.ShaderType.DepthOfField_Distance,
+                                                                FloatValue = .1f,
+                                                                TimeFull = .8f,
+                                                                TimeIn = 0f,
+                                                                TimeOut = .4f
+                                                            });
+            GameScreenDrawer.SetShaderValue(new ShaderValue {
+                                                                ShaderType = GameScreenDrawer.ShaderType.ChromaticAberration_Intensity,
+                                                                FloatValue = 1f,
+                                                                TimeFull = .8f,
+                                                                TimeIn = 0f,
+                                                                TimeOut = .4f
+                                                            });
+        }
+
         if (NetworkTime.time >= LastAction + Cooldown) {
             RaycastHit[] hits = Physics.SphereCastAll(transform.position, Distance, Vector3.up, Distance / 2f);
             Transform nearest = PhysicsUtils.GetNearestPlayerHit(hits.Where(hit => {
@@ -322,7 +380,7 @@ public class Player : NetworkBehaviour {
                                                          nearest.position + new Vector3(0f, 1f, 0f)
                                                      });
 
-                    if (Input.GetKeyDown(KeyCode.Q)) {
+                    if (Input.GetKeyDown(KeyCode.Q) && !IsFlying) {
                         CmdKill(nearest.gameObject);
                     }
 
@@ -415,6 +473,29 @@ public class Player : NetworkBehaviour {
         p.RpcPlayAnimation("Death");
         p._syncMovementKeys = 0;
         p.RpcSyncMovement(p.transform.position, 0);
+        p.TargetSendShaderValue(p.connectionToClient, new[] {
+                                                                new ShaderValue {
+                                                                                    ShaderType = GameScreenDrawer.ShaderType.ColorGrading_Filter,
+                                                                                    ColorValue = Color.red,
+                                                                                    TimeFull = .8f,
+                                                                                    TimeIn = 0f,
+                                                                                    TimeOut = .4f
+                                                                                },
+                                                                new ShaderValue {
+                                                                                    ShaderType = GameScreenDrawer.ShaderType.DepthOfField_Distance,
+                                                                                    FloatValue = .1f,
+                                                                                    TimeFull = .8f,
+                                                                                    TimeIn = 0f,
+                                                                                    TimeOut = .4f
+                                                                                },
+                                                                new ShaderValue {
+                                                                                    ShaderType = GameScreenDrawer.ShaderType.ChromaticAberration_Intensity,
+                                                                                    FloatValue = 1f,
+                                                                                    TimeFull = .8f,
+                                                                                    TimeIn = 0f,
+                                                                                    TimeOut = .4f
+                                                                                }
+                                                            });
     }
 
     [Command]
@@ -596,6 +677,57 @@ public class Player : NetworkBehaviour {
         }
     }
 
+    public void SetVelocity(Vector3 position, Vector3 velocity, Vector3 euler, float time) {
+        if (isServer) {
+            SetVelocityInternal(position, velocity, euler, time);
+            RpcSetVelocity(position, velocity, euler, time);
+        }
+        else {
+            CmdSetVelocity(position, velocity, euler, time);
+        }
+    }
+
+    private void SetVelocityInternal(Vector3 position, Vector3 velocity, Vector3 euler, float time) {
+        transform.position = position;
+        _rigidbody.velocity = velocity;
+        transform.eulerAngles = euler;
+        StartCoroutine(StopVelocity(time));
+        _flyingVelocity = velocity;
+        if (isServer)
+            IsFlying = true;
+    }
+
+    [Command]
+    private void CmdSetVelocity(Vector3 position, Vector3 velocity, Vector3 euler, float time) {
+        SetVelocity(position, velocity, euler, time);
+    }
+
+    [ClientRpc]
+    private void RpcSetVelocity(Vector3 position, Vector3 velocity, Vector3 euler, float time) {
+        SetVelocityInternal(position, velocity, euler, time);
+    }
+
+    private IEnumerator StopVelocity(float time) {
+        yield return new WaitForSeconds(time);
+        _flyingVelocity = Vector3.zero;
+        _rigidbody.velocity = Vector3.zero;
+        // transform.eulerAngles = Vector3.zero;
+        if (isServer)
+            IsFlying = false;
+    }
+
+    [Command]
+    private void CmdTriggerSlowMode() {
+        SlowMode = !SlowMode;
+    }
+
+    [TargetRpc]
+    private void TargetSendShaderValue(NetworkConnection conn, ShaderValue[] shaderValues) {
+        foreach (ShaderValue shaderValue in shaderValues) {
+            GameScreenDrawer.SetShaderValue(shaderValue);
+        }
+    }
+
     private void OnGUI() {
         if (!_model.isVisible || GameManager.GetCamera() == null)
             return;
@@ -639,6 +771,10 @@ public class Player : NetworkBehaviour {
                 GUI.skin.button.normal.background = GameAssets.DefaultUnityNormalBackground;
                 GUI.skin.button.hover.background = GameAssets.DefaultUnityHoverBackground;
                 GUI.skin.button.active.background = GameAssets.DefaultUnityActiveBackground;
+
+                if (GUI.Button(new Rect(136f, Screen.height - 8f - 20f, 64f, 20f), SlowMode ? "Fast" : "Slow")) {
+                    CmdTriggerSlowMode();
+                }
             }
 
             if (CurrentTask != null)

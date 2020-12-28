@@ -90,4 +90,33 @@ public class Utils {
 
         return input;
     }
+
+    public static Vector3 GetEulerByKeys(byte keys) {
+        // TODO: Fix..
+        float rot = 0f;
+        int k = 0;
+
+        if ((keys & 0b1) == 1) {
+            rot += 90f;
+            k++;
+        }
+
+        if (((keys >> 1) & 0b1) == 1) {
+            rot += 270f;
+            k++;
+        }
+
+        if (((keys >> 2) & 0b1) == 1) {
+            rot += 180f;
+            k++;
+        }
+
+        if (((keys >> 3) & 0b1) == 1) {
+            rot += (keys & 0b1) == 1 ? 0 : 360f;
+            k++;
+        }
+
+        rot /= k;
+        return new Vector3(0f, rot, 0f);
+    }
 }

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 108540408289238609}
   - component: {fileID: 622258267}
   - component: {fileID: 8649837706283867694}
-  - component: {fileID: 4184870606852524821}
+  - component: {fileID: 487519092232490428}
   m_Layer: 0
   m_Name: MANAGER
   m_TagString: Untagged
@@ -54,7 +54,7 @@ MonoBehaviour:
   serverTickRate: 30
   offlineScene: 
   onlineScene: 
-  transport: {fileID: 4184870606852524821}
+  transport: {fileID: 487519092232490428}
   networkAddress: localhost
   maxConnections: 10
   disconnectInactiveConnections: 0
@@ -144,7 +144,7 @@ MonoBehaviour:
   IntroVictimSprite: {fileID: 21300000, guid: 95a9a49a771cd0a4295d4c09b6c8bf39, type: 3}
   IntroHunterSprite: {fileID: 21300000, guid: a9a678d9c99889b4cbed0aeaa02e6019, type: 3}
   AdminTableRenderTexture: {fileID: 8400000, guid: 5a4d262a3abac1740af1454d5f9630ff, type: 2}
---- !u!114 &4184870606852524821
+--- !u!114 &487519092232490428
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

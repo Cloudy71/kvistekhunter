@@ -1,20 +1,36 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using UnityEngine;
+using UnityEngine.Rendering.PostProcessing;
+using UnityEngine.SceneManagement;
 
 public class GameScreenDrawer : MonoBehaviour {
     public static GameScreenDrawer Instance;
 
+    public enum ShaderType {
+        ColorGrading_Filter,
+        DepthOfField_Distance,
+        ChromaticAberration_Intensity
+    }
+
     public bool Intro;
     public bool Outro;
 
-    private float _introStart;
-    private float _outroStart;
-    private float _imageY;
-    private float _imageA;
-    private float _bgA;
-    private float _huntersHealthOnion;
-    private float _victimsHealthOnion;
+    private float                   _introStart;
+    private float                   _outroStart;
+    private float                   _imageY;
+    private float                   _imageA;
+    private float                   _bgA;
+    private float                   _huntersHealthOnion;
+    private float                   _victimsHealthOnion;
+    private Camera                  _camera;
+    private PostProcessVolume       _volume;
+    private ColorGrading            _shaderColorGrading;
+    private DepthOfField            _shaderDepthOfField;
+    private ChromaticAberration     _shaderChromaticAberration;
+    private List<ShaderValueBundle> _processingValues;
 
     private Texture2D _colorBlack;
     private Texture2D _colorRed;
@@ -27,11 +43,27 @@ public class GameScreenDrawer : MonoBehaviour {
         _introStart = 0f;
         _outroStart = 0f;
         _huntersHealthOnion = 1f;
+        ReloadCamera();
+        _processingValues = new List<ShaderValueBundle>();
 
         _colorBlack = AssetLoader.GetColor(0, 0, 0);
         _colorRed = AssetLoader.GetColor(255, 128, 128);
         _colorGreen = AssetLoader.GetColor(128, 255, 128);
         _colorWhite = AssetLoader.GetColor(255, 255, 255);
+
+        SceneManager.sceneLoaded += SceneManagerOnsceneLoaded;
+    }
+
+    private void SceneManagerOnsceneLoaded(Scene scene, LoadSceneMode mode) {
+        ReloadCamera();
+    }
+
+    private void ReloadCamera() {
+        _camera = Camera.main;
+        _volume = _camera.GetComponent<PostProcessVolume>();
+        _shaderColorGrading = _volume.profile.GetSetting<ColorGrading>();
+        _shaderDepthOfField = _volume.profile.GetSetting<DepthOfField>();
+        _shaderChromaticAberration = _volume.profile.GetSetting<ChromaticAberration>();
     }
 
     private void Update() {
@@ -68,6 +100,53 @@ public class GameScreenDrawer : MonoBehaviour {
             _victimsHealthOnion = Mathf.MoveTowards(_victimsHealthOnion, desiredHealthOnion, Time.deltaTime * .5f);
         else
             _victimsHealthOnion = desiredHealthOnion;
+
+        for (var i = 0; i < _processingValues.Count; i++) {
+            ShaderValueBundle valueBundle = _processingValues[i];
+            ShaderValue value = valueBundle.Value;
+            ShaderDefaultValue defaultValue = valueBundle.DefaultValue;
+
+            if (Time.time >= valueBundle.StartTime && Time.time <= valueBundle.StartTime + value.TimeFull) {
+                float time = Time.time - valueBundle.StartTime;
+                float transition = time <= value.TimeIn ? time / value.TimeIn : time >= value.TimeFull - value.TimeOut ? 1f - (time - (value.TimeFull - value.TimeOut)) / value.TimeOut : 1f;
+                Debug.Log(transition);
+                if (value.ShaderType == ShaderType.ColorGrading_Filter) {
+                    _shaderColorGrading.colorFilter.value = ColorTransition(defaultValue.DefaultColor, value.ColorValue, transition);
+                }
+                else if (value.ShaderType == ShaderType.DepthOfField_Distance) {
+                    _shaderDepthOfField.focusDistance.value = FloatTransition(defaultValue.DefaultFloat, value.FloatValue, transition);
+                }
+                else if (value.ShaderType == ShaderType.ChromaticAberration_Intensity) {
+                    _shaderChromaticAberration.intensity.value = FloatTransition(defaultValue.DefaultFloat, value.FloatValue, transition);
+                }
+            }
+            else {
+                if (value.ShaderType == ShaderType.ColorGrading_Filter) {
+                    _shaderColorGrading.colorFilter.value = defaultValue.DefaultColor;
+                }
+                else if (value.ShaderType == ShaderType.DepthOfField_Distance) {
+                    _shaderDepthOfField.focusDistance.value = defaultValue.DefaultFloat;
+                }
+                else if (value.ShaderType == ShaderType.ChromaticAberration_Intensity) {
+                    _shaderChromaticAberration.intensity.value = defaultValue.DefaultFloat;
+                }
+
+                _processingValues.RemoveAt(i);
+                i--;
+            }
+        }
+    }
+
+    private Color ColorTransition(Color defaultColor, Color targetColor, float transition) {
+        return new Color(
+            Mathf.MoveTowards(defaultColor.r, targetColor.r, transition),
+            Mathf.MoveTowards(defaultColor.g, targetColor.g, transition),
+            Mathf.MoveTowards(defaultColor.b, targetColor.b, transition),
+            Mathf.MoveTowards(defaultColor.a, targetColor.a, transition));
+    }
+
+    private float FloatTransition(float defaultFloat, float targetFloat, float transition) {
+        return Mathf.MoveTowards(defaultFloat, targetFloat, transition * Mathf.Abs(targetFloat - defaultFloat));
     }
 
     private void OnGUI() {
@@ -104,5 +183,41 @@ public class GameScreenDrawer : MonoBehaviour {
             GUI.DrawTexture(new Rect(Screen.width / 2f - 320f, Screen.height / 2f - 43f - y, 640f, 86f), tex);
             GUI.color = Color.white;
         }
+    }
+
+    private void SetShaderValueInternal(ShaderValue value) {
+        ShaderDefaultValue defaultValue;
+        if (_processingValues.Any(bundle => bundle.Value.ShaderType == value.ShaderType)) {
+            defaultValue = _processingValues.First(bundle => bundle.Value.ShaderType == value.ShaderType).DefaultValue;
+        }
+        else {
+            float defaultFloat = 0f;
+            Color defaultColor = Color.black;
+
+            if (value.ShaderType == ShaderType.ColorGrading_Filter) {
+                defaultColor = _shaderColorGrading.colorFilter.value;
+            }
+            else if (value.ShaderType == ShaderType.DepthOfField_Distance) {
+                defaultFloat = _shaderDepthOfField.focusDistance.value;
+            }
+            else if (value.ShaderType == ShaderType.ChromaticAberration_Intensity) {
+                defaultFloat = _shaderChromaticAberration.intensity.value;
+            }
+
+            defaultValue = new ShaderDefaultValue {
+                                                      DefaultFloat = defaultFloat,
+                                                      DefaultColor = defaultColor
+                                                  };
+        }
+
+        _processingValues.Add(new ShaderValueBundle {
+                                                        StartTime = Time.time,
+                                                        Value = value,
+                                                        DefaultValue = defaultValue
+                                                    });
+    }
+
+    public static void SetShaderValue(ShaderValue value) {
+        Instance.SetShaderValueInternal(value);
     }
 }
