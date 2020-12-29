@@ -24,23 +24,6 @@ public class NumbersLocalTask : GameLocalTask {
         _tickedBackground = AssetLoader.GetColor(64, 200, 64);
     }
 
-    public override bool OnTaskOpen(Player player) {
-        if (!base.OnTaskOpen(player))
-            return false;
-
-        // int numbers = 0;
-        // for (int i = 0; i < Amount; ++i) {
-        //     int pos;
-        //     do {
-        //         pos = Random.Range(0, 30);
-        //     } while (((numbers >> pos) & 0b1) == 1);
-        //
-        //     numbers |= 1 << pos;
-        // }
-
-        return true;
-    }
-
     public override void OnTaskOpenClient() {
         GenerateNumbers();
         _isTutorial = true;

@@ -70,7 +70,7 @@ MonoBehaviour:
   VictimLives: 5
   VictimSpeed: 6
   HunterVision: 25
-  HunterKillCooldown: 10
+  HunterKillCooldown: 15
   HunterSpeed: 8
   Hunters: 1
   DisplayHunters: 0
@@ -79,7 +79,7 @@ MonoBehaviour:
   HunterVisionOnCooldown: 2
   VictimCommonTasks: 1
   VictimLongTasks: 1
-  VictimShortTasks: 3
+  VictimShortTasks: 4
   TimeLimit: 600
   DefaultColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   TasksBalancedDamage: 0
